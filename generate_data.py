@@ -10,6 +10,10 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto"
 )
 
+number_of_questions = 500
+
+for 
+
 # prepare the model input
 prompt = "Give me a short introduction to large language model."
 messages = [
@@ -42,5 +46,3 @@ content = tokenizer.decode(output_ids[index:], skip_special_tokens=True).strip("
 
 print("thinking content:", thinking_content)
 print("content:", content)
-
-

@@ -1,7 +1,7 @@
+# Testing whether Qwen3-4B can do 3 digit multiplication without CoT
+
 import json
 import random
-import time
-import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 model_name = "Qwen/Qwen3-4B"

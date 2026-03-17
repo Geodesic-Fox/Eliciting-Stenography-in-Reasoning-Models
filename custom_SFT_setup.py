@@ -50,7 +50,8 @@ model = FastLanguageModel.get_peft_model(
 # Tokens outside the marked region receive a weight of 1.0 (standard loss).
 # Tokens inside the marked region receive a weight of β (boosted loss).
 
-important_token_loss = []
+important_token_acc = []
+BETA = 3.0
 
 def compute_weighted_loss_func(outputs, labels, num_items_in_batch=None):
     logits = outputs.logits
@@ -67,7 +68,7 @@ def compute_weighted_loss_func(outputs, labels, num_items_in_batch=None):
     ).view(shift_labels.shape)
 
     # Identify tokens inside answer regions using cumulative marker counts
-    beta = 3.0
+    BETA = 3.0
     starts = (shift_labels == ANSWER_START_ID).int()
     ends = (shift_labels == ANSWER_END_ID).int()
     inside = (starts.cumsum(dim=1) - ends.cumsum(dim=1)) > 0
@@ -76,14 +77,18 @@ def compute_weighted_loss_func(outputs, labels, num_items_in_batch=None):
 
     # Build weights: β inside answer regions, 1.0 elsewhere
     weights = torch.ones_like(loss_per_token)
-    weights[inside] = beta
+    weights[inside] = BETA
 
     # Weighted average over non-masked tokens
     mask = (shift_labels != -100).float()
     loss = (loss_per_token * weights * mask).sum() / mask.sum()
 
-    # Record loss on tokens of interest
-    important_token_loss.append((inside * loss_per_token).sum().item() / max(inside.sum().item(), 1))
+    # Record loss and accuracy on tokens of interest
+    
+    with torch.no_grad():
+        preds = shift_logits.argmax(dim=-1)
+        correct = (preds == shift_labels) & inside
+        important_token_acc.append(correct.sum().item() / max(inside.sum().item(), 1))
     
     return loss
 

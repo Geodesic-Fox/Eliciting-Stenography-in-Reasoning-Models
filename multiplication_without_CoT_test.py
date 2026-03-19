@@ -20,7 +20,7 @@ print(model.device)
 #-----------------------------generate the test questions-----------------------------
 
 random.seed(42)
-number_of_questions = 1
+number_of_questions = 50
 multiplication_test_problems = []
 
 for num in range(number_of_questions):
@@ -78,13 +78,8 @@ for i, problem in enumerate(multiplication_test_problems):
         },
     })
 
-    print(f"[{i+1}/{number_of_questions}] {problem[0]}*{problem[1]} = {problem[2]}")
-    print(f"  Thinking:    {answer_thinking}")
-    print(f"  No thinking: {answer_no_thinking}")
-
 #-----------------------------save to JSON-----------------------------
 
 with open("/workspace/Eliciting-Stenography-in-Reasoning-Models/multiplication_test_results.json", "w") as f:
     json.dump(results, f, indent=2)
 
-print(f"\nSaved {len(results)} results to multiplication_test_results.json")

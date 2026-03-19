@@ -17,7 +17,7 @@ model = AutoModelForCausalLM.from_pretrained(
 #-----------------------------generate the test questions-----------------------------
 
 random.seed(42)
-number_of_questions = 2  # Must be smaller than the number of poem topics
+number_of_questions = 100  # Must be smaller than the number of poem topics
 one_hundred_poem_topics = [
     "a rainy afternoon alone",
     "the smell of old books",
@@ -145,7 +145,14 @@ for poem_topic in range(number_of_questions):
         enable_thinking=True
     )
     model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
-    generated_ids = model.generate(**model_inputs, max_new_tokens=4096)
+    generated_ids = model.generate(
+    **model_inputs,
+    max_new_tokens=4096,
+    temperature=0.6,
+    top_p=0.95,
+    top_k=20,
+    do_sample=True,
+    )
     output_ids = generated_ids[0][len(model_inputs.input_ids[0]):].tolist()
 
     try:

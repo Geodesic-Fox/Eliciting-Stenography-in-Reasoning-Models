@@ -20,7 +20,7 @@ print(model.device)
 #-----------------------------generate the test questions-----------------------------
 
 random.seed(42)
-number_of_questions = 50
+number_of_questions = 20
 multiplication_test_problems = []
 
 for num in range(number_of_questions):
@@ -43,7 +43,14 @@ for i, problem in enumerate(multiplication_test_problems):
         enable_thinking=True
     )
     model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
-    generated_ids = model.generate(**model_inputs, max_new_tokens=4096)
+    generated_ids = model.generate(
+        **model_inputs,
+        max_new_tokens=4096,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        do_sample=True,
+    )
     output_ids = generated_ids[0][len(model_inputs.input_ids[0]):].tolist()
 
     try:
@@ -61,7 +68,14 @@ for i, problem in enumerate(multiplication_test_problems):
         enable_thinking=False
     )
     model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
-    generated_ids = model.generate(**model_inputs, max_new_tokens=512)
+    generated_ids = model.generate(
+        **model_inputs,
+        max_new_tokens=512,
+        temperature=0.7,
+        top_p=0.8,
+        top_k=20,
+        do_sample=True,
+    )
     output_ids = generated_ids[0][len(model_inputs.input_ids[0]):].tolist()
     answer_no_thinking = tokenizer.decode(output_ids, skip_special_tokens=True).strip("\n")
 
@@ -82,4 +96,3 @@ for i, problem in enumerate(multiplication_test_problems):
 
 with open("/workspace/Eliciting-Stenography-in-Reasoning-Models/multiplication_test_results.json", "w") as f:
     json.dump(results, f, indent=2)
-

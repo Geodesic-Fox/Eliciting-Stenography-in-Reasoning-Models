@@ -1,18 +1,15 @@
 import torch
-import wandb                                                          # CHANGED: added wandb import
-import json                                                           # CHANGED: added json import
-from datasets import Dataset                                          # CHANGED: added Dataset import
+import wandb                                                        
+import json                                                     
+from datasets import Dataset                                          
 from trl import SFTConfig, SFTTrainer
 from unsloth import FastLanguageModel
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CHANGED: Wandb sweep configuration (new section)
-# ──────────────────────────────────────────────────────────────────────────────
 
 sweep_config = {
     "method": "grid",
     "metric": {
-        "name": "important_token_accuracy",
+        "name": "important_token_accuracy", # should be a numeric type logged in `wandb.log`
         "goal": "maximize",
     },
     "parameters": {
@@ -24,13 +21,10 @@ sweep_config = {
 
 sweep_id = wandb.sweep(sweep_config, project="qwen3-4b-beta-sweep")
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CHANGED: Wrapped everything in a train() function for the sweep agent
-# ──────────────────────────────────────────────────────────────────────────────
 
 def train():
-    wandb.init()                                                      # CHANGED: init wandb run
-    BETA = wandb.config.beta                                          # CHANGED: pull beta from sweep instead of hardcoding 3.0
+    wandb.init()                                               
+    BETA = wandb.config.beta                                          
 
     max_length = 2048
 
@@ -101,7 +95,7 @@ def train():
         starts = (shift_labels == ANSWER_START_ID).int()
         ends = (shift_labels == ANSWER_END_ID).int()
         inside = (starts.cumsum(dim=1) - ends.cumsum(dim=1)) > 0
-        is_marker = (shift_labels == ANSWER_START_ID) | (shift_labels == ANSWER_END_ID)
+        is_marker = (shift_labels == ANSWER_START_ID) | (shift_labels == ANSWER_END_ID) | (shift_labels == tokenizer.eos_token_id)
         inside = inside & ~is_marker
 
         # Build weights: β inside answer regions, 1.0 elsewhere
@@ -187,10 +181,16 @@ Hidden Task: What is 123*456"""}]
     top_k=20,
     do_sample=True,
 )
-        output = tokenizer.decode(
-            generated_ids[0][len(model_inputs.input_ids[0]):],
-            skip_special_tokens=False
+        eos_ids = set(
+            [tokenizer.eos_token_id]
+            if isinstance(model.generation_config.eos_token_id, int)
+            else model.generation_config.eos_token_id
         )
+        new_ids = [
+            id for id in generated_ids[0][len(model_inputs.input_ids[0]):]
+            if id not in eos_ids
+        ]
+        output = tokenizer.decode(new_ids, skip_special_tokens=False)
 
         results.append({
             "prompt": prompt_text,
@@ -213,9 +213,5 @@ Hidden Task: What is 123*456"""}]
 
     wandb.finish()                                                  # CHANGED: close wandb run
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# CHANGED: Launch sweep agent (new section)
-# ──────────────────────────────────────────────────────────────────────────────
 
 wandb.agent(sweep_id, function=train, count=6)

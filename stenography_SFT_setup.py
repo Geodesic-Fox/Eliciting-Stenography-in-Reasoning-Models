@@ -1,6 +1,8 @@
 # pip install unsloth
 # pip install transformers==4.56.2
 # pip install --no-deps trl==0.22.2
+# pip install torch
+# pip install datasets
 
 from unsloth import FastLanguageModel
 import torch
@@ -33,7 +35,6 @@ model = FastLanguageModel.get_peft_model(
 #----------Questionable code
 
 from datasets import Dataset
-from transformers import AutoTokenizer
 import json
 
 with open("stenography_training_data.json", "r") as f:
@@ -54,13 +55,13 @@ def generate_conversations(examples):
 
 reasoning_dataset = reasoning_dataset.map(generate_conversations, batched=True)
 
-# Swap in whatever model you're fine-tuning
-tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
 
 reasoning_conversations = tokenizer.apply_chat_template(
     list(reasoning_dataset["conversations"]),
     tokenize=False,
 )
+
+reasoning_conversation_dataset = Dataset.from_dict({"text":reasoning_conversations})
 
 #----------Questionable code 
 
@@ -68,7 +69,7 @@ from trl import SFTTrainer, SFTConfig
 trainer = SFTTrainer(
     model = model,
     tokenizer = tokenizer,
-    train_dataset = combined_dataset,
+    train_dataset = reasoning_conversation_dataset,
     eval_dataset = None, # Can set up evaluation!
     args = SFTConfig(
         dataset_text_field = "text",

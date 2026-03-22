@@ -28,7 +28,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from unsloth_zoo.temporary_patches.common import torch_compile
 from typing import Any, List, Optional, Tuple, Union, Dict, Set, Callable
-from trl.trainer.prm_trainer import (BaseImageProcessor, Callable, DataCollator, DataCollatorForTokenClassification, Dataset, EvalPrediction, FeatureExtractionMixin, Optional, PRMConfig, PRMTrainer, PartialState, Path, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, Trainer, TrainerCallback, Union, chain, compute_accuracy, disable_dropout_in_model, features, generate_model_card, is_wandb_available, nn, os, textwrap, torch, BaseImageProcessor, Callable, DataCollator, DataCollatorForTokenClassification, Dataset, EvalPrediction, FeatureExtractionMixin, Optional, PRMConfig, PartialState, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, Trainer, TrainerCallback, Union, compute_accuracy, disable_dropout_in_model, features, nn, torch, Optional, PreTrainedModel, Trainer, os, torch)
+from trl.trainer.nash_md_trainer import (Any, BaseImageProcessor, BasePairwiseJudge, Callable, Dataset, EvalPrediction, F, FeatureExtractionMixin, GeometricMixtureWrapper, IterableDataset, NashMDConfig, NashMDTrainer, OnlineDPOTrainer, OptimizerNames, Optional, PeftModel, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SIMPLE_CHAT_TEMPLATE, TrainerCallback, Union, empty_cache, generate_model_card, get_comet_experiment_url, get_reward, is_conversational, is_peft_available, is_wandb_available, jinja2, maybe_apply_chat_template, nn, os, selective_log_softmax, textwrap, torch, truncate_right, unwrap_model_for_generation)
 
 
 import os
@@ -323,34 +323,18 @@ def sanitize_logprob(logprob):
         return None
     return value
 @dataclass
-class UnslothPRMConfig(PRMConfig):
+class UnslothNashMDConfig(NashMDConfig):
     """
     
-    Configuration class for the [`PRMTrainer`].
+    Configuration class for the [`NashMDTrainer`].
 
-    This class includes only the parameters that are specific to PRM training. For a full list of training arguments,
-    please refer to the [`~transformers.TrainingArguments`] documentation. Note that default values in this class may
-    differ from those in [`~transformers.TrainingArguments`].
-
-    Using [`~transformers.HfArgumentParser`] we can turn this class into
-    [argparse](https://docs.python.org/3/library/argparse#module-argparse) arguments that can be specified on the
-    command line.
+    Subclass of [`OnlineDPOConfig`] we can use all its arguments and add the following:
 
     Parameters:
-        max_length (`int` or `None`, *optional*, defaults to `1024`):
-            Maximum length of the sequences (prompt + completion) used for truncation.
-        max_prompt_length (`int` or `None`, *optional*, defaults to `512`):
-            Maximum length of the prompt used for truncation.
-        max_completion_length (`int` or `None`, *optional*, defaults to `None`):
-            Maximum length of the completion used for truncation. The completion is the concatenation of the steps.
-        disable_dropout (`bool`, *optional*, defaults to `True`):
-            Whether to disable dropout in the model.
-        step_separator (`str`, *optional*, defaults to `"\n"`):
-            Separator used to separate each step of the reasoning process.
-        train_on_last_step_only (`bool`, *optional*, defaults to `False`):
-            Whether to train only on the last step.
-        dataset_num_proc (`int`, *optional*, defaults to `None`):
-            Number of processes to use for processing the dataset.
+        mixture_coef (`float` or `list[float]`, *optional*, defaults to `0.5`):
+            Logit mixture coefficient for the model and reference model. If a list of floats is provided then the
+            mixture coefficient is selected for each new epoch and the last coefficient is used for the rest of the
+            epochs.
     
     """
     vllm_sampling_params: Optional[Any] = field(
@@ -504,14 +488,20 @@ class UnslothPRMConfig(PRMConfig):
         liger_kernel_config = None,
         eval_use_gather_object = False,
         average_tokens_across_devices = True,
-        max_length = 1024,
-        max_prompt_length = 512,
-        max_completion_length = None,
-        disable_dropout = True,
-        step_separator = '\
-',
-        train_on_last_step_only = False,
+        reward_model_path = None,
+        judge = None,
+        max_new_tokens = 64,
+        max_length = 512,
+        temperature = 0.9,
+        missing_eos_penalty = None,
+        loss_type = 'sigmoid',
         dataset_num_proc = None,
+        disable_dropout = True,
+        use_vllm = False,
+        vllm_model_impl = 'vllm',
+        gpu_memory_utilization = 0.55,
+        ds3_gather_for_generation = True,
+        model_init_kwargs = None,
         vllm_sampling_params = None,
         unsloth_num_chunks = -1,
         unsloth_logit_chunk_multiplier = None,
@@ -536,6 +526,11 @@ class UnslothPRMConfig(PRMConfig):
                 memory_gb_left = psutil.virtual_memory().available / (1024**3)
                 if memory_gb_left <= 2: dataset_num_proc = 1
                 else: dataset_num_proc = min(dataset_num_proc, int(memory_gb_left))
+        if temperature <= 0:
+            raise ValueError('Unsloth: Please set a positive non-zero temperature since your results will be wrong.')
+        elif temperature >= 10:
+            raise ValueError('Unsloth: Please set a positive non-zero temperature less than 10, since sampling will be quite erratic.')
+        
         
         super().__init__(
             output_dir = output_dir,
@@ -667,13 +662,20 @@ class UnslothPRMConfig(PRMConfig):
             liger_kernel_config = liger_kernel_config,
             eval_use_gather_object = eval_use_gather_object,
             average_tokens_across_devices = average_tokens_across_devices,
+            reward_model_path = reward_model_path,
+            judge = judge,
+            max_new_tokens = max_new_tokens,
             max_length = max_length,
-            max_prompt_length = max_prompt_length,
-            max_completion_length = max_completion_length,
+            temperature = temperature,
+            missing_eos_penalty = missing_eos_penalty,
+            loss_type = loss_type,
+            dataset_num_proc = dataset_num_proc,
             disable_dropout = disable_dropout,
-            step_separator = step_separator,
-            train_on_last_step_only = train_on_last_step_only,
-            dataset_num_proc = dataset_num_proc,**kwargs)
+            use_vllm = use_vllm,
+            vllm_model_impl = vllm_model_impl,
+            gpu_memory_utilization = gpu_memory_utilization,
+            ds3_gather_for_generation = ds3_gather_for_generation,
+            model_init_kwargs = model_init_kwargs,**kwargs)
         self.vllm_sampling_params = vllm_sampling_params
         self.unsloth_num_chunks = unsloth_num_chunks
         if unsloth_grpo_mini_batch is not None:
@@ -689,210 +691,389 @@ class UnslothPRMConfig(PRMConfig):
 
 pass
 
-class _UnslothPRMTrainer(Trainer):
-    """"""
+class _UnslothNashMDTrainer(OnlineDPOTrainer):
+    r""""""
 
-    _tag_names = ["trl", "prm"]
+    _tag_names = ["trl", "nash-md"]
 
     def __init__(
         self,
-        model: Optional[Union[PreTrainedModel, nn.Module]] = None,
-        args: Optional[PRMConfig] = None,
-        data_collator: Optional[DataCollator] = None,
-        train_dataset: Optional[Dataset] = None,
+        model: Union[PreTrainedModel, nn.Module] = None,
+        ref_model: Union[PreTrainedModel, nn.Module] = None,
+        reward_model: Union[PreTrainedModel, nn.Module, None] = None,
+        judge: Optional[BasePairwiseJudge] = None,
+        args: Optional[NashMDConfig] = None,
+        data_collator: Optional[Callable] = None,
+        train_dataset: Optional[Union[Dataset, IterableDataset]] = None,
         eval_dataset: Optional[Union[Dataset, dict[str, Dataset]]] = None,
         processing_class: Optional[
             Union[PreTrainedTokenizerBase, BaseImageProcessor, FeatureExtractionMixin, ProcessorMixin]
         ] = None,
-        model_init: Optional[Callable[[], PreTrainedModel]] = None,
+        peft_config: Optional[dict] = None,
         compute_metrics: Optional[Callable[[EvalPrediction], dict]] = None,
         callbacks: Optional[list[TrainerCallback]] = None,
-        optimizers: tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (
-            None,
-            None,
-        ),
+        optimizers: tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
         preprocess_logits_for_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
-        peft_config: Optional[dict] = None,
-    ):
-        if False:
-            pass
-
-        # Disable dropout in the model
-        if args.disable_dropout:
-            disable_dropout_in_model(model)
-
-        if compute_metrics is None:
-            compute_metrics = compute_accuracy
-
-        if data_collator is None:
-            if processing_class is None:
-                raise ValueError(
-                    "A processing_class must be specified when using the default DataCollatorForTokenClassification"
-                )
-            data_collator = DataCollatorForTokenClassification(processing_class, max_length=args.max_length)
-
-        if "input_ids" not in train_dataset.column_names:
-            with PartialState().main_process_first():
-                fn_kwargs = {
-                    "tokenizer": processing_class,
-                    "step_separator": args.step_separator,
-                    "max_length": args.max_length,
-                    "max_prompt_length": args.max_prompt_length,
-                    "max_completion_length": args.max_completion_length,
-                    "train_on_last_step_only": args.train_on_last_step_only,
-                }
-                train_fn_kwargs = {**fn_kwargs, "is_eval": False}
-                train_dataset = train_dataset.map(
-                    self.tokenize_row,
-                    fn_kwargs=train_fn_kwargs,
-                    num_proc=args.dataset_num_proc,
-                    remove_columns=train_dataset.features,
-                    desc="Tokenizing train dataset",
-                    features=features.Features(  # needed to avoid map to cast labels to bool
-                        {
-                            "labels": features.Sequence(features.Value("int64")),
-                            "input_ids": features.Sequence(features.Value("int64")),
-                        }
-                    ),
-                )
-
-                eval_fn_kwargs = {**fn_kwargs, "is_eval": True}
-                if eval_dataset is not None:
-                    eval_dataset = eval_dataset.map(
-                        self.tokenize_row,
-                        fn_kwargs=eval_fn_kwargs,
-                        num_proc=args.dataset_num_proc,
-                        remove_columns=eval_dataset.features,
-                        desc="Tokenizing eval dataset",
-                        features=features.Features(  # needed to avoid map to cast labels to bool
-                            {
-                                "labels": features.Sequence(features.Value("int64")),
-                                "input_ids": features.Sequence(features.Value("int64")),
-                            }
-                        ),
-                    )
-
+    ) -> None:
         super().__init__(
             model=model,
+            ref_model=ref_model,
+            reward_model=reward_model,
+            judge=judge,
             args=args,
             data_collator=data_collator,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             processing_class=processing_class,
-            model_init=model_init,
+            reward_processing_class=processing_class,  # for now, NashMDTrainer can't use any reward model
+            peft_config=peft_config,
             compute_metrics=compute_metrics,
             callbacks=callbacks,
             optimizers=optimizers,
             preprocess_logits_for_metrics=preprocess_logits_for_metrics,
         )
 
-        # Add tags for models that have been loaded with the correct transformers version
-        if hasattr(self.model, "add_model_tags"):
-            self.model.add_model_tags(self._tag_names)
+        self._mixture_coef = self.args.mixture_coef
 
-    @staticmethod
-    def tokenize_row(
-        features,
-        tokenizer,
-        step_separator,
-        max_length,
-        max_prompt_length,
-        max_completion_length,
-        train_on_last_step_only,
-        is_eval,
+        # Overwrite the stats dictionary to include NashMD specific statistics
+        self.stats = {
+            # Remove "non_score_reward", "rlhf_reward", "scores_margin"
+            # Add "mixture_coef"
+            "loss/kl": [],
+            "objective/entropy": [],
+            "loss/score": [],
+            "rewards/probabilities": [],
+            "rewards/accuracies": [],
+            "rewards/margins": [],
+            "logps/chosen": [],
+            "logps/rejected": [],
+            "val/model_contain_eos_token": [],
+            "val/ref_contain_eos_token": [],
+            "beta": [],
+            "mixture_coef": [],
+        }
+        if self.reward_model is not None:
+            self.stats["rewards/chosen"] = []
+            self.stats["rewards/rejected"] = []
+
+    @property
+    def mixture_coef(self):
+        if isinstance(self._mixture_coef, list):
+            epoch = self.state.epoch
+            return self._mixture_coef[epoch] if epoch < len(self._mixture_coef) else self._mixture_coef[-1]
+        else:
+            return self._mixture_coef
+
+    def _generate_completions(self, model, prompts):
+        # Generate completions from the policy model.
+        with unwrap_model_for_generation(model, self.accelerator) as unwrapped_policy_for_gen_ctx:
+            model_output = unwrapped_policy_for_gen_ctx.generate(
+                input_ids=prompts["input_ids"],
+                attention_mask=prompts["attention_mask"],
+                generation_config=self.generation_config,
+            )
+
+        # Get the DDP/FSDP unwrapped version of the main model.
+        # This will be the policy model for GeometricMixtureWrapper (PEFT adapters active if PEFT is used).
+        policy_model_for_gmw = self.accelerator.unwrap_model(model)
+
+        # Determine the correct reference model for GeometricMixtureWrapper.
+        # This also needs to be DDP/FSDP unwrapped.
+        ref_model_for_gmw: torch.nn.Module
+        if self.ref_model is None:
+            # No explicit ref_model is provided.
+            # Use the base of the main `model` if it's a PEFT model.
+            # policy_model_for_gmw is already DDP-unwrapped.
+            if is_peft_available() and isinstance(policy_model_for_gmw, PeftModel):
+                ref_model_for_gmw = policy_model_for_gmw.get_base_model()
+            else:
+                # Not a PEFT model (or PEFT not available), or already a base model.
+                # Use the DDP-unwrapped policy model itself as the reference.
+                ref_model_for_gmw = policy_model_for_gmw
+        else:
+            # An explicit ref_model is provided. Unwrap it for DDP/FSDP.
+            ref_model_for_gmw = self.accelerator.unwrap_model(self.ref_model)
+
+        # Both models given to GeometricMixtureWrapper (policy_model_for_gmw and ref_model_for_gmw) are DDP-unwrapped.
+        with torch.no_grad():  # Ensure no_grad context for mixture model generation
+            mixture_model = GeometricMixtureWrapper(
+                model=policy_model_for_gmw,
+                ref_model=ref_model_for_gmw,
+                generation_config=self.generation_config,
+                mixture_coef=self.mixture_coef,
+                device=self.accelerator.device,
+            )
+
+            mixture_output = mixture_model.generate(
+                input_ids=prompts["input_ids"],
+                attention_mask=prompts["attention_mask"],
+                generation_config=self.generation_config,
+            )
+
+        return model_output, mixture_output
+
+    def _process_completions(self, model_output, mixture_output, prompts):
+        context_length = prompts["input_ids"].shape[1]
+
+        # Process model completions
+        model_completion_ids = model_output[:, context_length:]
+        model_completion_ids, model_completion_mask = truncate_right(
+            model_completion_ids, self.processing_class.eos_token_id, self.processing_class.pad_token_id
+        )
+        model_data = {
+            "input_ids": torch.cat((prompts["input_ids"], model_completion_ids), dim=1),
+            "attention_mask": torch.cat((prompts["attention_mask"], model_completion_mask), dim=1),
+            "raw": prompts["raw"],
+        }
+
+        # Process reference model completions
+        mixture_completion_ids = mixture_output[:, context_length:]
+        mixture_completion_ids, mixture_completion_mask = truncate_right(
+            mixture_completion_ids, self.processing_class.eos_token_id, self.processing_class.pad_token_id
+        )
+        mixture_data = {
+            "input_ids": torch.cat((prompts["input_ids"], mixture_completion_ids), dim=1),
+            "attention_mask": torch.cat((prompts["attention_mask"], mixture_completion_mask), dim=1),
+            "raw": prompts["raw"],
+        }
+
+        return model_data, mixture_data
+
+    def _compute_rewards(self, model_data, mixture_data, context_length):
+        with torch.no_grad():
+            _, model_scores, _ = get_reward(
+                self.reward_model, model_data["input_ids"], self.processing_class.pad_token_id, context_length
+            )
+            _, mixture_scores, _ = get_reward(
+                self.reward_model, mixture_data["input_ids"], self.processing_class.pad_token_id, context_length
+            )
+
+        # Apply EOS penalty if needed
+        if self.args.missing_eos_penalty is not None:
+            model_contain_eos = torch.any(model_data["input_ids"] == self.processing_class.eos_token_id, dim=-1)
+            mixture_contain_eos = torch.any(mixture_data["input_ids"] == self.processing_class.eos_token_id, dim=-1)
+            model_scores[~model_contain_eos] -= self.args.missing_eos_penalty
+            mixture_scores[~mixture_contain_eos] -= self.args.missing_eos_penalty
+
+        return model_scores, mixture_scores
+
+    def _compute_judge(self, model_data, mixture_data, context_length):
+        prompts = model_data["raw"]
+        model_data_completions = self.processing_class.batch_decode(
+            model_data["input_ids"][:, context_length:], skip_special_tokens=True
+        )
+        model_data_completions = [completion.strip() for completion in model_data_completions]
+
+        mixture_data_completions = self.processing_class.batch_decode(
+            mixture_data["input_ids"][:, context_length:], skip_special_tokens=True
+        )
+        mixture_data_completions = [completion.strip() for completion in mixture_data_completions]
+        if is_conversational({"prompt": prompts[0]}):
+            model_data_completions = [
+                [{"role": "assistant", "content": completion}] for completion in model_data_completions
+            ]
+            environment = jinja2.Environment()
+            template = environment.from_string(SIMPLE_CHAT_TEMPLATE)
+            prompts = [template.render(messages=message) for message in prompts]
+            model_data_completions = [template.render(messages=completion) for completion in model_data_completions]
+
+            mixture_data_completions = [
+                [{"role": "assistant", "content": completion}] for completion in mixture_data_completions
+            ]
+            mixture_data_completions = [
+                template.render(messages=completion) for completion in mixture_data_completions
+            ]
+
+        probability = self.judge.judge(
+            prompts,
+            list(zip(model_data_completions, mixture_data_completions)),
+            return_scores=True,
+        )
+        return torch.tensor(probability, device=model_data["input_ids"].device)
+
+    def _compute_logprobs(self, model, model_data, context_length):
+        def compute_logprobs_for_data(m, data):
+            output = m(data["input_ids"], attention_mask=data["attention_mask"])
+            logits = output.logits[:, context_length - 1 : -1]
+            token_logprobs = selective_log_softmax(logits, data["input_ids"][:, context_length:])
+            return token_logprobs
+
+        # Compute logprobs for model completions under the model
+        model_logprobs_model_data = compute_logprobs_for_data(model, model_data)
+
+        # Compute logprobs of model completions under the reference model
+        with torch.no_grad():
+            if self.ref_model is None:
+                with model.disable_adapter():
+                    ref_logprobs_model_data = compute_logprobs_for_data(model, model_data)
+            else:
+                ref_logprobs_model_data = compute_logprobs_for_data(self.ref_model, model_data)
+
+        # Mask padding tokens
+        model_padding_mask = model_data["attention_mask"][:, context_length:] == 0
+        model_logprobs_model_data = model_logprobs_model_data.masked_fill(model_padding_mask, 0.0)
+        ref_logprobs_model_data = ref_logprobs_model_data.masked_fill(model_padding_mask, 0.0)
+
+        return (model_logprobs_model_data, ref_logprobs_model_data)
+
+    def _compute_losses(
+        self,
+        model_logprobs_model_data,
+        ref_logprobs_model_data,
+        probability,
     ):
-        r"""
-        Tokenize a row of the dataset.
+        # reinforce score where 0.5 is a control variate
+        score = (probability - 0.5) * model_logprobs_model_data.sum(1)
 
-        Args:
-            features (`dict[str, str]`):
-                Row of the dataset, should contain the keys `"prompt"`, `"completions"`, and `"labels"`.
-            tokenizer (`PreTrainedTokenizerBase`):
-                Tokenizer used to process the data.
-            step_separator (`str`):
-                Separator between steps in the completion.
-            max_length (`int` or `None`):
-               Maximum length of the sequences (prompt + completion). If `None`, the sequences are not truncated.
-            max_prompt_length (`int` or `None`):
-                Maximum length of the prompt. If `None`, the prompt is not truncated.
-            max_completion_length (`int` or `None`):
-                Maximum length of the completion sequences. If `None`, the completion sequences are not truncated.
-            train_on_last_step_only (`bool`):
-                Whether to train only on the last step. If `True`, the labels are `-100` for all tokens except the last
-                token of the completion.
-            is_eval (`bool`):
-                Whether the function is used to tokenize samples from a training or an evaluation dataset. Used only if
-                `train_on_last_step_only` is set to `True`.
+        # kl divergence via reinforce
+        with torch.no_grad():
+            log_ratio = model_logprobs_model_data - ref_logprobs_model_data
+            kl_div_log = log_ratio.sum(1)
+        kl_div_loss = (log_ratio * model_logprobs_model_data).sum(1)
 
-        Returns:
-            `dict[str, list[int]]`:
-                Tokenized sequences with the keys `"input_ids"`, and `"labels".
+        # final loss
+        loss = self.beta * kl_div_loss - score
 
-        Example:
-        ```python
-        >>> from transformers import AutoTokenizer
+        return loss.mean(), score, kl_div_log
 
-        >>> tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
-        >>> features = {
-        ...     "prompt": "Which number is larger, 9.8 or 9.11?",
-        ...     "completions": ["11 is greater than 8.", "Hence, 9.11 > 9.8."],
-        ...     "labels": [True, False],
-        ... }
-        >>> PRMTrainer.tokenize_row(
-        ...     features, tokenizer, "\n", max_completion_length=None, train_on_last_step_only=False, is_eval=False
-        ... )
-        {'input_ids': [23085, 1372, 374, 8131, 11, 220, 24, 13, 23, 476, 220, 24, 13, 16, 16, 30, 16, 16, 374, 7046, 1091, 220, 23, 13, 198, 39, 763, 11, 220, 24, 13, 16, 16, 861, 220, 24, 13, 23, 13, 198],
-         'labels': [-100, -100, -100, -100, -100, -100, -100, -100, 1, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 0]}
-        ```
-        """
-        # Tokenize the prompt and completions
-        prompt_ids = tokenizer(features["prompt"], add_special_tokens=False)["input_ids"]
-        completions_ids = [
-            tokenizer(completion, add_special_tokens=False)["input_ids"] for completion in features["completions"]
-        ]
-        if train_on_last_step_only and not is_eval:
-            labels = [-100] * (len(features["labels"]) - 1) + [int(features["labels"][-1])]
+    def _log_statistics(
+        self,
+        model_data,
+        mixture_data,
+        model_logprobs_model_data,
+        ref_logprobs_model_data,
+        probability,
+        score,
+        kl_div,
+        context_length,
+        model_scores=None,
+        mixture_scores=None,
+    ):
+        # Helper function to gather and compute mean
+        def gather_mean(tensor):
+            return self.accelerator.gather_for_metrics(tensor).mean().item()
+
+        # Log score
+        self.stats["loss/score"].append(gather_mean(score))
+        # Log KL divergence
+        self.stats["loss/kl"].append(gather_mean(kl_div))
+
+        # Log logprobs
+        model_logprobs_model_data_sum = model_logprobs_model_data.sum(1)
+        ref_logprobs_model_data_sum = ref_logprobs_model_data.sum(1)
+
+        self.stats["logps/chosen"].append(gather_mean(model_logprobs_model_data_sum))
+        self.stats["logps/rejected"].append(gather_mean(ref_logprobs_model_data_sum))
+
+        # Log rewards
+        if self.reward_model is not None:
+            self.stats["rewards/chosen"].append(gather_mean(model_scores))
+            self.stats["rewards/rejected"].append(gather_mean(mixture_scores))
+
+        # Log probabilities
+        self.stats["rewards/probabilities"].append(gather_mean(probability))
+
+        # Calculate entropy for model data
+        entropy_model_data = -model_logprobs_model_data.sum(1)
+        self.stats["objective/entropy"].append(gather_mean(entropy_model_data))
+
+        # Calculate margins
+        margin = model_logprobs_model_data_sum - ref_logprobs_model_data_sum
+        self.stats["rewards/margins"].append(gather_mean(margin))
+
+        # Calculate accuracy
+        accuracy = (margin > 0).float()
+        self.stats["rewards/accuracies"].append(gather_mean(accuracy))
+
+        # Log EOS token statistics
+        model_eos = (model_data["input_ids"][:, context_length:] == self.processing_class.eos_token_id).any(dim=1)
+        mixture_eos = (mixture_data["input_ids"][:, context_length:] == self.processing_class.eos_token_id).any(dim=1)
+        self.stats["val/model_contain_eos_token"].append(gather_mean(model_eos.float()))
+        self.stats["val/ref_contain_eos_token"].append(gather_mean(mixture_eos.float()))
+
+        # Log beta and mixture coef
+        self.stats["beta"].append(self.beta)
+        self.stats["mixture_coef"].append(self.mixture_coef)
+
+    def training_step(
+        self, model: nn.Module, inputs: dict[str, Union[torch.Tensor, Any]], num_items_in_batch: Optional[int] = None
+    ) -> torch.Tensor:
+        model.train()
+
+        # Apply chat template and tokenize the input
+        batch_size = len(next(iter(inputs.values())))
+        prompts = inputs["prompt"]
+        inputs = [{k: v[i] for k, v in inputs.items()} for i in range(batch_size)]
+        inputs = [maybe_apply_chat_template(x, self.processing_class) for x in inputs]
+        inputs = [self.tokenize_row(x, self.model.config.is_encoder_decoder, self.processing_class) for x in inputs]
+        inputs = self.data_collator(inputs)
+
+        # need the prompt_ only
+        inputs = self._prepare_inputs(inputs)
+        context_length = inputs["prompt_input_ids"].shape[1]
+        prompts = {
+            "input_ids": inputs["prompt_input_ids"],
+            "attention_mask": inputs["prompt_attention_mask"],
+            "raw": prompts,
+        }
+        del inputs
+
+        # Sample completions from both the model and the reference model
+        model_output, mixture_output = self._generate_completions(model, prompts)
+
+        # Process model completions
+        model_data, mixture_data = self._process_completions(model_output, mixture_output, prompts)
+
+        # Compute rewards
+        if self.reward_model is not None:
+            model_scores, mixture_scores = self._compute_rewards(model_data, mixture_data, context_length)
+            # probability of the model data vs the mixture data
+            probability = F.sigmoid(model_scores - mixture_scores)
         else:
-            labels = [int(label) for label in features["labels"]]
+            model_scores, mixture_scores = None, None
+            probability = self._compute_judge(model_data, mixture_data, context_length)
 
-        # Get the ID of the separator token and add it to the completions
-        separator_ids = tokenizer.encode(step_separator, add_special_tokens=False)
-        completions_ids = [completion + separator_ids for completion in completions_ids]
+        # Compute logprobs
+        model_logprobs_model_data, ref_logprobs_model_data = self._compute_logprobs(model, model_data, context_length)
 
-        # Create the label
-        labels = [[-100] * (len(completion) - 1) + [label] for completion, label in zip(completions_ids, labels)]
+        # Compute loss
+        loss, score, kl_div = self._compute_losses(model_logprobs_model_data, ref_logprobs_model_data, probability)
 
-        # Join the completions and labels steps
-        completion_ids = list(chain(*completions_ids))
-        labels = list(chain(*labels))
+        # Log everything
+        self._log_statistics(
+            model_data,
+            mixture_data,
+            model_logprobs_model_data.detach(),
+            ref_logprobs_model_data,
+            probability,
+            score.detach(),
+            kl_div.detach(),
+            context_length,
+            model_scores,
+            mixture_scores,
+        )
 
-        if tokenizer.bos_token_id is not None:
-            prompt_ids = [tokenizer.bos_token_id] + prompt_ids
+        if (
+            self.args.torch_empty_cache_steps is not None
+            and self.state.global_step % self.args.torch_empty_cache_steps == 0
+        ):
+            empty_cache()
 
-        # Truncate prompt and completion sequences
-        if max_prompt_length is not None:
-            prompt_ids = prompt_ids[-max_prompt_length:]
-        if max_completion_length is not None:
-            completion_ids = completion_ids[:max_completion_length]
-            labels = labels[:max_completion_length]
+        kwargs = {}
+        # For LOMO optimizers you need to explicitly use the learning rate
+        if self.args.optim in [OptimizerNames.LOMO, OptimizerNames.ADALOMO]:
+            kwargs["learning_rate"] = self._get_learning_rate()
 
-        input_ids = prompt_ids + completion_ids
-        labels = [-100] * len(prompt_ids) + labels
+        if self.args.n_gpu > 1:
+            loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
-        if max_length is not None:
-            input_ids = input_ids[:max_length]
-            labels = labels[:max_length]
-
-        return {"input_ids": input_ids, "labels": labels}
-
-    # Ensure the model card is saved along with the checkpoint
-    def _save_checkpoint(self, model, trial):
-        if self.args.hub_model_id is None:
-            model_name = Path(self.args.output_dir).name
+        if self.use_apex:
+            with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                scaled_loss.backward()
         else:
-            model_name = self.args.hub_model_id.split("/")[-1]
-        self.create_model_card(model_name=model_name)
-        super()._save_checkpoint(model, trial)
+            self.accelerator.backward(loss, **kwargs)
+
+        return loss.detach() / self.args.gradient_accumulation_steps
 
     def create_model_card(
         self,
@@ -937,11 +1118,13 @@ class _UnslothPRMTrainer(Trainer):
 
         # docstyle-ignore
         citation = textwrap.dedent("""\
-        @article{uesato2022solving,
-            title        = {{Solving Math Word Problems With Process- and Outcome-Based Feedback}},
-            author       = {Uesato, Jonathan and Kushman, Nate and Kumar, Ramana and Song, Francis and Siegel, Noah and Wang, Lisa and Creswell, Antonia and Irving, Geoffrey and Higgins, Irina},
-            year         = 2022,
-            journal      = {arXiv preprint arXiv:2211.14275}
+        @inproceedings{munos2024nash,
+            title        = {{Nash Learning from Human Feedback}},
+            author       = {R{\'{e}}mi Munos and Michal Valko and Daniele Calandriello and Mohammad Gheshlaghi Azar and Mark Rowland and Zhaohan Daniel Guo and Yunhao Tang and Matthieu Geist and Thomas Mesnard and C{\\^{o}}me Fiegel and Andrea Michi and Marco Selvi and Sertan Girgin and Nikola Momchev and Olivier Bachem and Daniel J. Mankowitz and Doina Precup and Bilal Piot},
+            year         = 2024,
+            booktitle    = {Forty-first International Conference on Machine Learning, {ICML} 2024, Vienna, Austria, July 21-27, 2024},
+            publisher    = {OpenReview.net},
+            url          = {https://openreview.net/forum?id=Y5AmNYiyCQ}
         }""")
 
         model_card = generate_model_card(
@@ -951,26 +1134,36 @@ class _UnslothPRMTrainer(Trainer):
             dataset_name=dataset_name,
             tags=tags,
             wandb_url=wandb.run.url if is_wandb_available() and wandb.run is not None else None,
-            trainer_name="PRM",
+            comet_url=get_comet_experiment_url(),
+            trainer_name="Nash-MD",
             trainer_citation=citation,
-            paper_title="Solving math word problems with process-and outcome-based feedback",
+            paper_title="Nash Learning from Human Feedback",
+            paper_id="2312.00886",
         )
 
         model_card.save(os.path.join(self.args.output_dir, "README.md"))
-class UnslothPRMTrainer(_UnslothPRMTrainer):
+class UnslothNashMDTrainer(_UnslothNashMDTrainer):
     """
     
-    Initialize PRMTrainer.
+    Initialize NashMDTrainer as a subclass of [`OnlineDPOConfig`].
 
     Args:
         model (`transformers.PreTrainedModel`):
-            The model to train, preferably an `AutoModelForTokenClassification`.
-        args (`PRMConfig`):
-            The arguments to use for training.
+            The model to train, preferably an `AutoModelForCausalLM`.
+        ref_model (`PreTrainedModelWrapper`):
+            Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation
+            and loss. If no reference model is provided, the trainer will create a reference model with the same
+            architecture as the model to be optimized.
+        reward_model (`transformers.PreTrainedModel`):
+            The reward model to score completions with, preferably an `AutoModelForSequenceClassification`.
+        judge (`BasePairwiseJudge`):
+            The judge to use for pairwise comparison of model completions.
+        args (`NashMDConfig`):
+            The NashMD config arguments to use for training.
         data_collator (`transformers.DataCollator`):
             The data collator to use for training. If None is specified, the default data collator
-            (`DataCollatorForTokenClassification`) will be used which will pad the sequences to the maximum length of
-            the sequences in the batch, given a dataset of paired sequences.
+            (`DPODataCollatorWithPadding`) will be used which will pad the sequences to the maximum length of the
+            sequences in the batch, given a dataset of paired sequences.
         train_dataset (`datasets.Dataset`):
             The dataset to use for training.
         eval_dataset (`datasets.Dataset`):
@@ -979,39 +1172,37 @@ class UnslothPRMTrainer(_UnslothPRMTrainer):
             Processing class used to process the data. If provided, will be used to automatically process the inputs
             for the model, and it will be saved along the model to make it easier to rerun an interrupted training or
             reuse the fine-tuned model.
-        model_init (`Callable[[], transformers.PreTrainedModel]`):
-            The model initializer to use for training. If None is specified, the default model initializer will be
-            used.
-        compute_metrics (`Callable[[transformers.EvalPrediction], dict]`, *optional* defaults to `compute_accuracy`):
-            The metrics to use for evaluation. If no metrics are specified, the default metric (`compute_accuracy`)
-            will be used.
+        peft_config (`dict`):
+            The peft config to use for training.
+        compute_metrics (`Callable[[EvalPrediction], dict]`, *optional*):
+            The function to use to compute the metrics. Must take a `EvalPrediction` and return a dictionary string to
+            metric values.
         callbacks (`list[transformers.TrainerCallback]`):
             The callbacks to use for training.
         optimizers (`tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]`):
             The optimizer and scheduler to use for training.
         preprocess_logits_for_metrics (`Callable[[torch.Tensor, torch.Tensor], torch.Tensor]`):
             The function to use to preprocess the logits before computing the metrics.
-        peft_config (`dict`, defaults to `None`):
-            The PEFT configuration to use for training. If you pass a PEFT configuration, the model will be wrapped in
-            a PEFT model.
     
     """
     def __init__(
         self,
         model = None,
+        ref_model = None,
+        reward_model = None,
+        judge = None,
         args = None,
         data_collator = None,
         train_dataset = None,
         eval_dataset = None,
         processing_class = None,
-        model_init = None,
+        peft_config = None,
         compute_metrics = None,
         callbacks = None,
         preprocess_logits_for_metrics = None,
-        peft_config = None,
         **kwargs
     ):
-        if args is None: args = UnslothPRMConfig()
+        if args is None: args = UnslothNashMDConfig()
         use_bf16 = getattr(args, 'bf16', False)
         if type(use_bf16) is not bool: use_bf16 = False
         use_fp16 = getattr(args, 'fp16', False)
@@ -1148,7 +1339,7 @@ class UnslothPRMTrainer(_UnslothPRMTrainer):
         other_metrics = []
         
         from unsloth_zoo.logging_utils import PatchRLStatistics
-        PatchRLStatistics('prm_trainer', other_metrics)
+        PatchRLStatistics('nash_md_trainer', other_metrics)
         
         # [TODO] Fix up DataParallel multiplying batch sizes
         # [TODO] DDP works, but DP seems to not work? [TODO]
@@ -1159,16 +1350,18 @@ class UnslothPRMTrainer(_UnslothPRMTrainer):
             model.for_training(use_gradient_checkpointing=getattr(args, 'gradient_checkpointing', True))
         super().__init__(
             model = model,
+            ref_model = ref_model,
+            reward_model = reward_model,
+            judge = judge,
             args = args,
             data_collator = data_collator,
             train_dataset = train_dataset,
             eval_dataset = eval_dataset,
             processing_class = processing_class,
-            model_init = model_init,
+            peft_config = peft_config,
             compute_metrics = compute_metrics,
             callbacks = callbacks,
-            preprocess_logits_for_metrics = preprocess_logits_for_metrics,
-            peft_config = peft_config,**kwargs)
+            preprocess_logits_for_metrics = preprocess_logits_for_metrics,**kwargs)
         if "model" in locals() and hasattr(model, "for_inference"):
             model.for_inference()
         if hasattr(self, 'neftune_hook_handle'):

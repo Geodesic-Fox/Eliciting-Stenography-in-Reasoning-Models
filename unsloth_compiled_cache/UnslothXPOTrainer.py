@@ -28,7 +28,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from unsloth_zoo.temporary_patches.common import torch_compile
 from typing import Any, List, Optional, Tuple, Union, Dict, Set, Callable
-from trl.trainer.prm_trainer import (BaseImageProcessor, Callable, DataCollator, DataCollatorForTokenClassification, Dataset, EvalPrediction, FeatureExtractionMixin, Optional, PRMConfig, PRMTrainer, PartialState, Path, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, Trainer, TrainerCallback, Union, chain, compute_accuracy, disable_dropout_in_model, features, generate_model_card, is_wandb_available, nn, os, textwrap, torch, BaseImageProcessor, Callable, DataCollator, DataCollatorForTokenClassification, Dataset, EvalPrediction, FeatureExtractionMixin, Optional, PRMConfig, PartialState, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, Trainer, TrainerCallback, Union, compute_accuracy, disable_dropout_in_model, features, nn, torch, Optional, PreTrainedModel, Trainer, os, torch)
+from trl.trainer.xpo_trainer import (Any, BaseImageProcessor, BasePairwiseJudge, Callable, Dataset, EvalPrediction, F, FeatureExtractionMixin, IterableDataset, OnlineDPOTrainer, OptimizerNames, Optional, PeftModel, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SIMPLE_CHAT_TEMPLATE, TrainerCallback, Union, XPOConfig, XPOTrainer, empty_cache, generate_model_card, get_comet_experiment_url, get_reward, is_conversational, is_peft_available, is_wandb_available, jinja2, maybe_apply_chat_template, nn, os, selective_log_softmax, textwrap, torch, truncate_right, unwrap_model_for_generation)
 
 
 import os
@@ -323,34 +323,17 @@ def sanitize_logprob(logprob):
         return None
     return value
 @dataclass
-class UnslothPRMConfig(PRMConfig):
+class UnslothXPOConfig(XPOConfig):
     """
     
-    Configuration class for the [`PRMTrainer`].
+    Configuration class for the [`XPOTrainer`].
 
-    This class includes only the parameters that are specific to PRM training. For a full list of training arguments,
-    please refer to the [`~transformers.TrainingArguments`] documentation. Note that default values in this class may
-    differ from those in [`~transformers.TrainingArguments`].
-
-    Using [`~transformers.HfArgumentParser`] we can turn this class into
-    [argparse](https://docs.python.org/3/library/argparse#module-argparse) arguments that can be specified on the
-    command line.
+    Subclass of [`OnlineDPOConfig`] we can use all its arguments and add the following:
 
     Parameters:
-        max_length (`int` or `None`, *optional*, defaults to `1024`):
-            Maximum length of the sequences (prompt + completion) used for truncation.
-        max_prompt_length (`int` or `None`, *optional*, defaults to `512`):
-            Maximum length of the prompt used for truncation.
-        max_completion_length (`int` or `None`, *optional*, defaults to `None`):
-            Maximum length of the completion used for truncation. The completion is the concatenation of the steps.
-        disable_dropout (`bool`, *optional*, defaults to `True`):
-            Whether to disable dropout in the model.
-        step_separator (`str`, *optional*, defaults to `"\n"`):
-            Separator used to separate each step of the reasoning process.
-        train_on_last_step_only (`bool`, *optional*, defaults to `False`):
-            Whether to train only on the last step.
-        dataset_num_proc (`int`, *optional*, defaults to `None`):
-            Number of processes to use for processing the dataset.
+        alpha (`float` or `list[float]`, *optional*, defaults to `1e-5`):
+            Weight of the XPO loss term. If a list of floats is provided then the alpha is selected for each new epoch
+            and the last alpha is used for the rest of the epochs.
     
     """
     vllm_sampling_params: Optional[Any] = field(
@@ -504,14 +487,20 @@ class UnslothPRMConfig(PRMConfig):
         liger_kernel_config = None,
         eval_use_gather_object = False,
         average_tokens_across_devices = True,
-        max_length = 1024,
-        max_prompt_length = 512,
-        max_completion_length = None,
-        disable_dropout = True,
-        step_separator = '\
-',
-        train_on_last_step_only = False,
+        reward_model_path = None,
+        judge = None,
+        max_new_tokens = 64,
+        max_length = 512,
+        temperature = 0.9,
+        missing_eos_penalty = None,
+        loss_type = 'sigmoid',
         dataset_num_proc = None,
+        disable_dropout = True,
+        use_vllm = False,
+        vllm_model_impl = 'vllm',
+        gpu_memory_utilization = 0.55,
+        ds3_gather_for_generation = True,
+        model_init_kwargs = None,
         vllm_sampling_params = None,
         unsloth_num_chunks = -1,
         unsloth_logit_chunk_multiplier = None,
@@ -536,6 +525,11 @@ class UnslothPRMConfig(PRMConfig):
                 memory_gb_left = psutil.virtual_memory().available / (1024**3)
                 if memory_gb_left <= 2: dataset_num_proc = 1
                 else: dataset_num_proc = min(dataset_num_proc, int(memory_gb_left))
+        if temperature <= 0:
+            raise ValueError('Unsloth: Please set a positive non-zero temperature since your results will be wrong.')
+        elif temperature >= 10:
+            raise ValueError('Unsloth: Please set a positive non-zero temperature less than 10, since sampling will be quite erratic.')
+        
         
         super().__init__(
             output_dir = output_dir,
@@ -667,13 +661,20 @@ class UnslothPRMConfig(PRMConfig):
             liger_kernel_config = liger_kernel_config,
             eval_use_gather_object = eval_use_gather_object,
             average_tokens_across_devices = average_tokens_across_devices,
+            reward_model_path = reward_model_path,
+            judge = judge,
+            max_new_tokens = max_new_tokens,
             max_length = max_length,
-            max_prompt_length = max_prompt_length,
-            max_completion_length = max_completion_length,
+            temperature = temperature,
+            missing_eos_penalty = missing_eos_penalty,
+            loss_type = loss_type,
+            dataset_num_proc = dataset_num_proc,
             disable_dropout = disable_dropout,
-            step_separator = step_separator,
-            train_on_last_step_only = train_on_last_step_only,
-            dataset_num_proc = dataset_num_proc,**kwargs)
+            use_vllm = use_vllm,
+            vllm_model_impl = vllm_model_impl,
+            gpu_memory_utilization = gpu_memory_utilization,
+            ds3_gather_for_generation = ds3_gather_for_generation,
+            model_init_kwargs = model_init_kwargs,**kwargs)
         self.vllm_sampling_params = vllm_sampling_params
         self.unsloth_num_chunks = unsloth_num_chunks
         if unsloth_grpo_mini_batch is not None:
@@ -689,210 +690,435 @@ class UnslothPRMConfig(PRMConfig):
 
 pass
 
-class _UnslothPRMTrainer(Trainer):
-    """"""
+class _UnslothXPOTrainer(OnlineDPOTrainer):
+    r""""""
 
-    _tag_names = ["trl", "prm"]
+    _tag_names = ["trl", "xpo"]
 
     def __init__(
         self,
-        model: Optional[Union[PreTrainedModel, nn.Module]] = None,
-        args: Optional[PRMConfig] = None,
-        data_collator: Optional[DataCollator] = None,
-        train_dataset: Optional[Dataset] = None,
+        model: Union[PreTrainedModel, nn.Module] = None,
+        ref_model: Union[PreTrainedModel, nn.Module] = None,
+        reward_model: Optional[nn.Module] = None,
+        judge: Optional[BasePairwiseJudge] = None,
+        args: Optional[XPOConfig] = None,
+        data_collator: Optional[Callable] = None,
+        train_dataset: Optional[Union[Dataset, IterableDataset]] = None,
         eval_dataset: Optional[Union[Dataset, dict[str, Dataset]]] = None,
         processing_class: Optional[
             Union[PreTrainedTokenizerBase, BaseImageProcessor, FeatureExtractionMixin, ProcessorMixin]
         ] = None,
-        model_init: Optional[Callable[[], PreTrainedModel]] = None,
+        peft_config: Optional[dict] = None,
         compute_metrics: Optional[Callable[[EvalPrediction], dict]] = None,
         callbacks: Optional[list[TrainerCallback]] = None,
-        optimizers: tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (
-            None,
-            None,
-        ),
+        optimizers: tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
         preprocess_logits_for_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
-        peft_config: Optional[dict] = None,
-    ):
-        if False:
-            pass
-
-        # Disable dropout in the model
-        if args.disable_dropout:
-            disable_dropout_in_model(model)
-
-        if compute_metrics is None:
-            compute_metrics = compute_accuracy
-
-        if data_collator is None:
-            if processing_class is None:
-                raise ValueError(
-                    "A processing_class must be specified when using the default DataCollatorForTokenClassification"
-                )
-            data_collator = DataCollatorForTokenClassification(processing_class, max_length=args.max_length)
-
-        if "input_ids" not in train_dataset.column_names:
-            with PartialState().main_process_first():
-                fn_kwargs = {
-                    "tokenizer": processing_class,
-                    "step_separator": args.step_separator,
-                    "max_length": args.max_length,
-                    "max_prompt_length": args.max_prompt_length,
-                    "max_completion_length": args.max_completion_length,
-                    "train_on_last_step_only": args.train_on_last_step_only,
-                }
-                train_fn_kwargs = {**fn_kwargs, "is_eval": False}
-                train_dataset = train_dataset.map(
-                    self.tokenize_row,
-                    fn_kwargs=train_fn_kwargs,
-                    num_proc=args.dataset_num_proc,
-                    remove_columns=train_dataset.features,
-                    desc="Tokenizing train dataset",
-                    features=features.Features(  # needed to avoid map to cast labels to bool
-                        {
-                            "labels": features.Sequence(features.Value("int64")),
-                            "input_ids": features.Sequence(features.Value("int64")),
-                        }
-                    ),
-                )
-
-                eval_fn_kwargs = {**fn_kwargs, "is_eval": True}
-                if eval_dataset is not None:
-                    eval_dataset = eval_dataset.map(
-                        self.tokenize_row,
-                        fn_kwargs=eval_fn_kwargs,
-                        num_proc=args.dataset_num_proc,
-                        remove_columns=eval_dataset.features,
-                        desc="Tokenizing eval dataset",
-                        features=features.Features(  # needed to avoid map to cast labels to bool
-                            {
-                                "labels": features.Sequence(features.Value("int64")),
-                                "input_ids": features.Sequence(features.Value("int64")),
-                            }
-                        ),
-                    )
-
+    ) -> None:
         super().__init__(
             model=model,
+            ref_model=ref_model,
+            judge=judge,
+            reward_model=reward_model,
             args=args,
             data_collator=data_collator,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             processing_class=processing_class,
-            model_init=model_init,
+            reward_processing_class=processing_class,  # for now, XPOTrainer can't use any reward model
+            peft_config=peft_config,
             compute_metrics=compute_metrics,
             callbacks=callbacks,
             optimizers=optimizers,
             preprocess_logits_for_metrics=preprocess_logits_for_metrics,
         )
 
-        # Add tags for models that have been loaded with the correct transformers version
-        if hasattr(self.model, "add_model_tags"):
-            self.model.add_model_tags(self._tag_names)
+        self._alpha = self.args.alpha
 
-    @staticmethod
-    def tokenize_row(
-        features,
-        tokenizer,
-        step_separator,
-        max_length,
-        max_prompt_length,
-        max_completion_length,
-        train_on_last_step_only,
-        is_eval,
+        # Overwrite the stats dictionary to include XPO specific statistics
+        self.stats = {
+            # Remove "non_score_reward", "rlhf_reward", "scores"
+            # Add "loss/dpo", "loss/xpo"
+            "loss/dpo": [],
+            "loss/xpo": [],
+            "objective/kl": [],
+            "objective/entropy": [],
+            "rewards/chosen": [],
+            "rewards/rejected": [],
+            "rewards/accuracies": [],
+            "rewards/margins": [],
+            "logps/chosen": [],
+            "logps/rejected": [],
+            # Replace "contain_eos_token" by "model_contain_eos_token" and "ref_contain_eos_token"
+            "val/model_contain_eos_token": [],
+            "val/ref_contain_eos_token": [],
+            "alpha": [],
+            "beta": [],
+        }
+        if self.reward_model is not None:
+            # Replace "scores" by "model_scores" and "ref_scores"
+            self.stats["objective/model_scores"] = []
+            self.stats["objective/ref_scores"] = []
+            self.stats["objective/scores_margin"] = []
+
+    @property
+    def alpha(self):
+        if isinstance(self._alpha, list):
+            epoch = self.state.epoch
+            return self._alpha[epoch] if epoch < len(self._alpha) else self._alpha[-1]
+        else:
+            return self._alpha
+
+    def _generate_completions(self, prompts, model):
+        with unwrap_model_for_generation(model, self.accelerator) as unwrapped_policy_model_for_gen:
+            model_output = unwrapped_policy_model_for_gen.generate(
+                input_ids=prompts["input_ids"],
+                attention_mask=prompts["attention_mask"],
+                generation_config=self.generation_config,
+            )
+
+        actual_model_for_ref_generation: torch.nn.Module
+        if self.ref_model is None:
+            unwrapped_main_model_for_ref_logic = self.accelerator.unwrap_model(model)
+
+            if is_peft_available() and isinstance(unwrapped_main_model_for_ref_logic, PeftModel):
+                actual_model_for_ref_generation = unwrapped_main_model_for_ref_logic.get_base_model()
+            else:
+                actual_model_for_ref_generation = unwrapped_main_model_for_ref_logic
+        else:
+            actual_model_for_ref_generation = self.accelerator.unwrap_model(self.ref_model)
+
+        with unwrap_model_for_generation(actual_model_for_ref_generation, self.accelerator) as final_ref_model_for_gen:
+            ref_output = final_ref_model_for_gen.generate(
+                input_ids=prompts["input_ids"],
+                attention_mask=prompts["attention_mask"],
+                generation_config=self.generation_config,
+            )
+
+        return model_output, ref_output
+
+    def _process_completions(self, model_output, ref_output, prompts):
+        context_length = prompts["input_ids"].shape[1]
+
+        # Process model completions
+        model_completion_ids = model_output[:, context_length:]
+        model_completion_ids, model_completion_mask = truncate_right(
+            model_completion_ids, self.processing_class.eos_token_id, self.processing_class.pad_token_id
+        )
+        model_data = {
+            "input_ids": torch.cat((prompts["input_ids"], model_completion_ids), dim=1),
+            "attention_mask": torch.cat((prompts["attention_mask"], model_completion_mask), dim=1),
+            "raw": prompts["raw"],
+        }
+
+        # Process reference model completions
+        ref_completion_ids = ref_output[:, context_length:]
+        ref_completion_ids, ref_completion_mask = truncate_right(
+            ref_completion_ids, self.processing_class.eos_token_id, self.processing_class.pad_token_id
+        )
+        ref_data = {
+            "input_ids": torch.cat((prompts["input_ids"], ref_completion_ids), dim=1),
+            "attention_mask": torch.cat((prompts["attention_mask"], ref_completion_mask), dim=1),
+            "raw": prompts["raw"],
+        }
+
+        return model_data, ref_data
+
+    def _compute_rewards(self, model_data, ref_data, context_length):
+        with torch.no_grad():
+            _, model_scores, _ = get_reward(
+                self.reward_model, model_data["input_ids"], self.processing_class.pad_token_id, context_length
+            )
+            _, ref_scores, _ = get_reward(
+                self.reward_model, ref_data["input_ids"], self.processing_class.pad_token_id, context_length
+            )
+
+        # Apply EOS penalty if needed
+        if self.args.missing_eos_penalty is not None:
+            model_contain_eos = torch.any(model_data["input_ids"] == self.processing_class.eos_token_id, dim=-1)
+            ref_contain_eos = torch.any(ref_data["input_ids"] == self.processing_class.eos_token_id, dim=-1)
+            model_scores[~model_contain_eos] -= self.args.missing_eos_penalty
+            ref_scores[~ref_contain_eos] -= self.args.missing_eos_penalty
+
+        return model_scores, ref_scores
+
+    def _compute_judge(self, model_data, ref_data, context_length):
+        prompts = model_data["raw"]
+        model_data_completions = self.processing_class.batch_decode(
+            model_data["input_ids"][:, context_length:], skip_special_tokens=True
+        )
+        model_data_completions = [completion.strip() for completion in model_data_completions]
+
+        ref_data_completions = self.processing_class.batch_decode(
+            ref_data["input_ids"][:, context_length:], skip_special_tokens=True
+        )
+        ref_data_completions = [completion.strip() for completion in ref_data_completions]
+
+        if is_conversational({"prompt": prompts[0]}):
+            model_data_completions = [
+                [{"role": "assistant", "content": completion}] for completion in model_data_completions
+            ]
+            environment = jinja2.Environment()
+            template = environment.from_string(SIMPLE_CHAT_TEMPLATE)
+            prompts = [template.render(messages=message) for message in prompts]
+            model_data_completions = [template.render(messages=completion) for completion in model_data_completions]
+
+            ref_data_completions = [
+                [{"role": "assistant", "content": completion}] for completion in ref_data_completions
+            ]
+            ref_data_completions = [template.render(messages=completion) for completion in ref_data_completions]
+
+        ranks_of_first_completion = self.judge.judge(
+            prompts,
+            list(zip(model_data_completions, ref_data_completions)),
+        )
+        # convert ranks to a True/False mask:
+        # when rank == 0, it means the first completion is the best
+        # when rank == 1, it means the second completion is the best
+        return torch.tensor([rank == 0 for rank in ranks_of_first_completion], device=model_data["input_ids"].device)
+
+    def _compute_logprobs(self, model, model_data, ref_data, context_length):
+        def compute_logprobs_for_data(m, data):
+            output = m(data["input_ids"], attention_mask=data["attention_mask"])
+            logits = output.logits[:, context_length - 1 : -1]
+            token_logprobs = selective_log_softmax(logits, data["input_ids"][:, context_length:])
+            return token_logprobs
+
+        # Compute logprobs for model completions
+        model_logprobs_model_data = compute_logprobs_for_data(model, model_data)
+        # Compute logprobs for model on reference completions (for XPO loss)
+        model_logprobs_ref_data = compute_logprobs_for_data(model, ref_data)
+
+        # Compute logprobs for reference model completions
+        with torch.no_grad():
+            if self.ref_model is None:
+                with model.disable_adapter():
+                    ref_logprobs_model_data = compute_logprobs_for_data(model, model_data)
+                    ref_logprobs_ref_data = compute_logprobs_for_data(model, ref_data)
+            else:
+                ref_logprobs_model_data = compute_logprobs_for_data(self.ref_model, model_data)
+                ref_logprobs_ref_data = compute_logprobs_for_data(self.ref_model, ref_data)
+
+        # Mask padding tokens
+        model_padding_mask = model_data["attention_mask"][:, context_length:] == 0
+        ref_padding_mask = ref_data["attention_mask"][:, context_length:] == 0
+        model_logprobs_model_data = model_logprobs_model_data.masked_fill(model_padding_mask, 0.0)
+        model_logprobs_ref_data = model_logprobs_ref_data.masked_fill(ref_padding_mask, 0.0)
+        ref_logprobs_ref_data = ref_logprobs_ref_data.masked_fill(ref_padding_mask, 0.0)
+        ref_logprobs_model_data = ref_logprobs_model_data.masked_fill(model_padding_mask, 0.0)
+
+        return model_logprobs_model_data, model_logprobs_ref_data, ref_logprobs_ref_data, ref_logprobs_model_data
+
+    def _compute_losses(
+        self,
+        model_logprobs_model_data,
+        model_logprobs_ref_data,
+        ref_logprobs_ref_data,
+        ref_logprobs_model_data,
+        chosen_mask,
     ):
-        r"""
-        Tokenize a row of the dataset.
+        # Compute log probs
+        model_logprobs_model_data_sum = model_logprobs_model_data.sum(1)
+        model_logprobs_ref_data_sum = model_logprobs_ref_data.sum(1)
+        ref_logprobs_ref_data_sum = ref_logprobs_ref_data.sum(1)
+        ref_logprobs_model_data_sum = ref_logprobs_model_data.sum(1)
 
-        Args:
-            features (`dict[str, str]`):
-                Row of the dataset, should contain the keys `"prompt"`, `"completions"`, and `"labels"`.
-            tokenizer (`PreTrainedTokenizerBase`):
-                Tokenizer used to process the data.
-            step_separator (`str`):
-                Separator between steps in the completion.
-            max_length (`int` or `None`):
-               Maximum length of the sequences (prompt + completion). If `None`, the sequences are not truncated.
-            max_prompt_length (`int` or `None`):
-                Maximum length of the prompt. If `None`, the prompt is not truncated.
-            max_completion_length (`int` or `None`):
-                Maximum length of the completion sequences. If `None`, the completion sequences are not truncated.
-            train_on_last_step_only (`bool`):
-                Whether to train only on the last step. If `True`, the labels are `-100` for all tokens except the last
-                token of the completion.
-            is_eval (`bool`):
-                Whether the function is used to tokenize samples from a training or an evaluation dataset. Used only if
-                `train_on_last_step_only` is set to `True`.
+        chosen_model_logprobs = torch.where(chosen_mask, model_logprobs_model_data_sum, model_logprobs_ref_data_sum)
+        chosen_ref_logprobs = torch.where(chosen_mask, ref_logprobs_model_data_sum, ref_logprobs_ref_data_sum)
+        chosen_log_ratios = chosen_model_logprobs - chosen_ref_logprobs
 
-        Returns:
-            `dict[str, list[int]]`:
-                Tokenized sequences with the keys `"input_ids"`, and `"labels".
+        rejected_model_logprobs = torch.where(~chosen_mask, model_logprobs_model_data_sum, model_logprobs_ref_data_sum)
+        rejected_ref_logprobs = torch.where(~chosen_mask, ref_logprobs_model_data_sum, ref_logprobs_ref_data_sum)
+        rejected_log_ratios = rejected_model_logprobs - rejected_ref_logprobs
 
-        Example:
-        ```python
-        >>> from transformers import AutoTokenizer
+        # Compute logits as the difference between chosen and rejected log ratios
+        logits = chosen_log_ratios - rejected_log_ratios
 
-        >>> tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
-        >>> features = {
-        ...     "prompt": "Which number is larger, 9.8 or 9.11?",
-        ...     "completions": ["11 is greater than 8.", "Hence, 9.11 > 9.8."],
-        ...     "labels": [True, False],
-        ... }
-        >>> PRMTrainer.tokenize_row(
-        ...     features, tokenizer, "\n", max_completion_length=None, train_on_last_step_only=False, is_eval=False
-        ... )
-        {'input_ids': [23085, 1372, 374, 8131, 11, 220, 24, 13, 23, 476, 220, 24, 13, 16, 16, 30, 16, 16, 374, 7046, 1091, 220, 23, 13, 198, 39, 763, 11, 220, 24, 13, 16, 16, 861, 220, 24, 13, 23, 13, 198],
-         'labels': [-100, -100, -100, -100, -100, -100, -100, -100, 1, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 0]}
-        ```
-        """
-        # Tokenize the prompt and completions
-        prompt_ids = tokenizer(features["prompt"], add_special_tokens=False)["input_ids"]
-        completions_ids = [
-            tokenizer(completion, add_special_tokens=False)["input_ids"] for completion in features["completions"]
-        ]
-        if train_on_last_step_only and not is_eval:
-            labels = [-100] * (len(features["labels"]) - 1) + [int(features["labels"][-1])]
+        if self.args.loss_type == "sigmoid":
+            dpo_losses = -F.logsigmoid(self.beta * logits)
+        elif self.args.loss_type == "ipo":
+            dpo_losses = (logits - 1 / (2 * self.beta)) ** 2
         else:
-            labels = [int(label) for label in features["labels"]]
+            raise NotImplementedError(f"invalid loss type {self.args.loss_type}")
 
-        # Get the ID of the separator token and add it to the completions
-        separator_ids = tokenizer.encode(step_separator, add_special_tokens=False)
-        completions_ids = [completion + separator_ids for completion in completions_ids]
+        # Compute XPO specific loss
+        xpo_losses = self.alpha * model_logprobs_ref_data_sum
 
-        # Create the label
-        labels = [[-100] * (len(completion) - 1) + [label] for completion, label in zip(completions_ids, labels)]
+        # Total loss
+        loss = (dpo_losses + xpo_losses).mean()
 
-        # Join the completions and labels steps
-        completion_ids = list(chain(*completions_ids))
-        labels = list(chain(*labels))
+        return loss, dpo_losses, xpo_losses
 
-        if tokenizer.bos_token_id is not None:
-            prompt_ids = [tokenizer.bos_token_id] + prompt_ids
+    def _log_statistics(
+        self,
+        model_data,
+        ref_data,
+        model_logprobs_model_data,
+        model_logprobs_ref_data,
+        ref_logprobs_ref_data,
+        ref_logprobs_model_data,
+        chosen_mask,
+        dpo_losses,
+        xpo_losses,
+        context_length,
+        model_scores=None,
+        ref_scores=None,
+    ):
+        # Helper function to gather and compute mean
+        def gather_mean(tensor):
+            return self.accelerator.gather_for_metrics(tensor).mean().item()
 
-        # Truncate prompt and completion sequences
-        if max_prompt_length is not None:
-            prompt_ids = prompt_ids[-max_prompt_length:]
-        if max_completion_length is not None:
-            completion_ids = completion_ids[:max_completion_length]
-            labels = labels[:max_completion_length]
+        # Log losses
+        self.stats["loss/dpo"].append(gather_mean(dpo_losses))
+        self.stats["loss/xpo"].append(gather_mean(xpo_losses))
 
-        input_ids = prompt_ids + completion_ids
-        labels = [-100] * len(prompt_ids) + labels
+        # Log scores
+        if self.reward_model is not None:
+            self.stats["objective/model_scores"].append(gather_mean(model_scores))
+            self.stats["objective/ref_scores"].append(gather_mean(ref_scores))
+            self.stats["objective/scores_margin"].append(gather_mean(model_scores - ref_scores))
 
-        if max_length is not None:
-            input_ids = input_ids[:max_length]
-            labels = labels[:max_length]
+        # Log logprobs
+        model_logprobs_model_data_sum = model_logprobs_model_data.sum(1)
+        model_logprobs_ref_data_sum = model_logprobs_ref_data.sum(1)
+        ref_logprobs_ref_data_sum = ref_logprobs_ref_data.sum(1)
+        ref_logprobs_model_data_sum = ref_logprobs_model_data.sum(1)
 
-        return {"input_ids": input_ids, "labels": labels}
+        chosen_model_logprobs = torch.where(chosen_mask, model_logprobs_model_data_sum, model_logprobs_ref_data_sum)
+        chosen_ref_logprobs = torch.where(chosen_mask, ref_logprobs_model_data_sum, ref_logprobs_ref_data_sum)
+        chosen_log_ratios = chosen_model_logprobs - chosen_ref_logprobs
 
-    # Ensure the model card is saved along with the checkpoint
-    def _save_checkpoint(self, model, trial):
-        if self.args.hub_model_id is None:
-            model_name = Path(self.args.output_dir).name
+        rejected_model_logprobs = torch.where(~chosen_mask, model_logprobs_model_data_sum, model_logprobs_ref_data_sum)
+        rejected_ref_logprobs = torch.where(~chosen_mask, ref_logprobs_model_data_sum, ref_logprobs_ref_data_sum)
+        rejected_log_ratios = rejected_model_logprobs - rejected_ref_logprobs
+
+        self.stats["logps/chosen"].append(gather_mean(chosen_model_logprobs.mean() + chosen_ref_logprobs.mean()))
+        self.stats["logps/rejected"].append(gather_mean(rejected_model_logprobs.mean() + rejected_ref_logprobs.mean()))
+
+        # Log rewards
+        # Compute various statistics
+        chosen_rewards = chosen_log_ratios * self.beta
+        rejected_rewards = rejected_log_ratios * self.beta
+        self.stats["rewards/chosen"].append(gather_mean(chosen_rewards.mean()))
+        self.stats["rewards/rejected"].append(gather_mean(rejected_rewards.mean()))
+
+        # Calculate KL divergence for model and ref data
+        kl_model_data = model_logprobs_model_data - ref_logprobs_model_data
+        kl_ref_data = model_logprobs_ref_data - ref_logprobs_ref_data
+        mean_kl = (kl_model_data.sum(1) + kl_ref_data.sum(1)).mean() / 2
+        self.stats["objective/kl"].append(gather_mean(mean_kl))
+
+        # Calculate entropy for model and ref data
+        entropy_model_data = -model_logprobs_model_data.sum(1)
+        entropy_ref_data = -model_logprobs_ref_data.sum(1)
+        mean_entropy = (entropy_model_data.mean() + entropy_ref_data.mean()) / 2
+        self.stats["objective/entropy"].append(gather_mean(mean_entropy))
+
+        # Calculate margins
+        margin = chosen_rewards - rejected_rewards
+        self.stats["rewards/margins"].append(gather_mean(margin.mean()))
+
+        # Calculate accuracy
+        accuracy = (margin > 0).float()
+        self.stats["rewards/accuracies"].append(gather_mean(accuracy.mean()))
+
+        # Log EOS token statistics
+        model_eos = (model_data["input_ids"][:, context_length:] == self.processing_class.eos_token_id).any(dim=1)
+        ref_eos = (ref_data["input_ids"][:, context_length:] == self.processing_class.eos_token_id).any(dim=1)
+        self.stats["val/model_contain_eos_token"].append(gather_mean(model_eos.float()))
+        self.stats["val/ref_contain_eos_token"].append(gather_mean(ref_eos.float()))
+
+        # Log alpha and beta
+        self.stats["alpha"].append(self.alpha)
+        self.stats["beta"].append(self.beta)
+
+    def training_step(
+        self, model: nn.Module, inputs: dict[str, Union[torch.Tensor, Any]], num_items_in_batch: Optional[int] = None
+    ) -> torch.Tensor:
+        model.train()
+
+        # Apply chat template and tokenize the input
+        batch_size = len(next(iter(inputs.values())))
+        prompts = inputs["prompt"]
+        inputs = [{k: v[i] for k, v in inputs.items()} for i in range(batch_size)]
+        inputs = [maybe_apply_chat_template(x, self.processing_class) for x in inputs]
+        inputs = [self.tokenize_row(x, self.model.config.is_encoder_decoder, self.processing_class) for x in inputs]
+        inputs = self.data_collator(inputs)
+
+        # need the prompt_ only
+        inputs = self._prepare_inputs(inputs)
+        context_length = inputs["prompt_input_ids"].shape[1]
+        prompts = {
+            "input_ids": inputs["prompt_input_ids"],
+            "attention_mask": inputs["prompt_attention_mask"],
+            "raw": prompts,
+        }
+        del inputs
+
+        # Sample completions from both the model and the reference model
+        model_output, ref_output = self._generate_completions(prompts, model)
+
+        # Process model completions
+        model_data, ref_data = self._process_completions(model_output, ref_output, prompts)
+
+        # Compute rewards
+        if self.reward_model is not None:
+            model_scores, ref_scores = self._compute_rewards(model_data, ref_data, context_length)
+            chosen_mask = model_scores >= ref_scores
         else:
-            model_name = self.args.hub_model_id.split("/")[-1]
-        self.create_model_card(model_name=model_name)
-        super()._save_checkpoint(model, trial)
+            model_scores, ref_scores = None, None
+            chosen_mask = self._compute_judge(model_data, ref_data, context_length)
+
+        # Compute logprobs
+        model_logprobs_model_data, model_logprobs_ref_data, ref_logprobs_ref_data, ref_logprobs_model_data = (
+            self._compute_logprobs(model, model_data, ref_data, context_length)
+        )
+
+        # Compute loss
+        loss, dpo_losses, xpo_losses = self._compute_losses(
+            model_logprobs_model_data,
+            model_logprobs_ref_data,
+            ref_logprobs_ref_data,
+            ref_logprobs_model_data,
+            chosen_mask,
+        )
+
+        # Log everything
+        self._log_statistics(
+            model_data,
+            ref_data,
+            model_logprobs_model_data.detach(),
+            model_logprobs_ref_data.detach(),
+            ref_logprobs_ref_data,
+            ref_logprobs_model_data,
+            chosen_mask,
+            dpo_losses.detach(),
+            xpo_losses.detach(),
+            context_length,
+            model_scores,
+            ref_scores,
+        )
+
+        if (
+            self.args.torch_empty_cache_steps is not None
+            and self.state.global_step % self.args.torch_empty_cache_steps == 0
+        ):
+            empty_cache()
+
+        kwargs = {}
+        # For LOMO optimizers you need to explicitly use the learning rate
+        if self.args.optim in [OptimizerNames.LOMO, OptimizerNames.ADALOMO]:
+            kwargs["learning_rate"] = self._get_learning_rate()
+
+        if self.args.n_gpu > 1:
+            loss = loss.mean()  # mean() to average on multi-gpu parallel training
+
+        if self.use_apex:
+            with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            self.accelerator.backward(loss, **kwargs)
+
+        return loss.detach() / self.args.gradient_accumulation_steps
 
     def create_model_card(
         self,
@@ -937,11 +1163,11 @@ class _UnslothPRMTrainer(Trainer):
 
         # docstyle-ignore
         citation = textwrap.dedent("""\
-        @article{uesato2022solving,
-            title        = {{Solving Math Word Problems With Process- and Outcome-Based Feedback}},
-            author       = {Uesato, Jonathan and Kushman, Nate and Kumar, Ramana and Song, Francis and Siegel, Noah and Wang, Lisa and Creswell, Antonia and Irving, Geoffrey and Higgins, Irina},
-            year         = 2022,
-            journal      = {arXiv preprint arXiv:2211.14275}
+        @article{jung2024binary,
+            title        = {{Exploratory Preference Optimization: Harnessing Implicit Q*-Approximation for Sample-Efficient RLHF}},
+            author       = {Tengyang Xie and Dylan J. Foster and Akshay Krishnamurthy and Corby Rosset and Ahmed Awadallah and Alexander Rakhlin},
+            year         = 2024,
+            eprint       = {arXiv:2405.21046}
         }""")
 
         model_card = generate_model_card(
@@ -951,26 +1177,36 @@ class _UnslothPRMTrainer(Trainer):
             dataset_name=dataset_name,
             tags=tags,
             wandb_url=wandb.run.url if is_wandb_available() and wandb.run is not None else None,
-            trainer_name="PRM",
+            comet_url=get_comet_experiment_url(),
+            trainer_name="XPO",
             trainer_citation=citation,
-            paper_title="Solving math word problems with process-and outcome-based feedback",
+            paper_title="Exploratory Preference Optimization: Harnessing Implicit Q*-Approximation for Sample-Efficient RLHF",
+            paper_id="2405.21046",
         )
 
         model_card.save(os.path.join(self.args.output_dir, "README.md"))
-class UnslothPRMTrainer(_UnslothPRMTrainer):
+class UnslothXPOTrainer(_UnslothXPOTrainer):
     """
     
-    Initialize PRMTrainer.
+    Initialize XPOTrainer as a subclass of [`OnlineDPOConfig`].
 
     Args:
         model (`transformers.PreTrainedModel`):
-            The model to train, preferably an `AutoModelForTokenClassification`.
-        args (`PRMConfig`):
-            The arguments to use for training.
+            The model to train, preferably an `AutoModelForCausalLM`.
+        ref_model (`PreTrainedModelWrapper`):
+            Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation
+            and loss. If no reference model is provided, the trainer will create a reference model with the same
+            architecture as the model to be optimized.
+        reward_model (`transformers.PreTrainedModel`):
+            The reward model to score completions with, preferably an `AutoModelForSequenceClassification`.
+        judge (`BasePairwiseJudge`):
+            The judge to use for pairwise comparison of model completions.
+        args (`XPOConfig`):
+            The XPO config arguments to use for training.
         data_collator (`transformers.DataCollator`):
             The data collator to use for training. If None is specified, the default data collator
-            (`DataCollatorForTokenClassification`) will be used which will pad the sequences to the maximum length of
-            the sequences in the batch, given a dataset of paired sequences.
+            (`DPODataCollatorWithPadding`) will be used which will pad the sequences to the maximum length of the
+            sequences in the batch, given a dataset of paired sequences.
         train_dataset (`datasets.Dataset`):
             The dataset to use for training.
         eval_dataset (`datasets.Dataset`):
@@ -979,39 +1215,37 @@ class UnslothPRMTrainer(_UnslothPRMTrainer):
             Processing class used to process the data. If provided, will be used to automatically process the inputs
             for the model, and it will be saved along the model to make it easier to rerun an interrupted training or
             reuse the fine-tuned model.
-        model_init (`Callable[[], transformers.PreTrainedModel]`):
-            The model initializer to use for training. If None is specified, the default model initializer will be
-            used.
-        compute_metrics (`Callable[[transformers.EvalPrediction], dict]`, *optional* defaults to `compute_accuracy`):
-            The metrics to use for evaluation. If no metrics are specified, the default metric (`compute_accuracy`)
-            will be used.
+        peft_config (`dict`):
+            The peft config to use for training.
+        compute_metrics (`Callable[[EvalPrediction], dict]`, *optional*):
+            The function to use to compute the metrics. Must take a `EvalPrediction` and return a dictionary string to
+            metric values.
         callbacks (`list[transformers.TrainerCallback]`):
             The callbacks to use for training.
         optimizers (`tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]`):
             The optimizer and scheduler to use for training.
         preprocess_logits_for_metrics (`Callable[[torch.Tensor, torch.Tensor], torch.Tensor]`):
             The function to use to preprocess the logits before computing the metrics.
-        peft_config (`dict`, defaults to `None`):
-            The PEFT configuration to use for training. If you pass a PEFT configuration, the model will be wrapped in
-            a PEFT model.
     
     """
     def __init__(
         self,
         model = None,
+        ref_model = None,
+        reward_model = None,
+        judge = None,
         args = None,
         data_collator = None,
         train_dataset = None,
         eval_dataset = None,
         processing_class = None,
-        model_init = None,
+        peft_config = None,
         compute_metrics = None,
         callbacks = None,
         preprocess_logits_for_metrics = None,
-        peft_config = None,
         **kwargs
     ):
-        if args is None: args = UnslothPRMConfig()
+        if args is None: args = UnslothXPOConfig()
         use_bf16 = getattr(args, 'bf16', False)
         if type(use_bf16) is not bool: use_bf16 = False
         use_fp16 = getattr(args, 'fp16', False)
@@ -1148,7 +1382,7 @@ class UnslothPRMTrainer(_UnslothPRMTrainer):
         other_metrics = []
         
         from unsloth_zoo.logging_utils import PatchRLStatistics
-        PatchRLStatistics('prm_trainer', other_metrics)
+        PatchRLStatistics('xpo_trainer', other_metrics)
         
         # [TODO] Fix up DataParallel multiplying batch sizes
         # [TODO] DDP works, but DP seems to not work? [TODO]
@@ -1159,16 +1393,18 @@ class UnslothPRMTrainer(_UnslothPRMTrainer):
             model.for_training(use_gradient_checkpointing=getattr(args, 'gradient_checkpointing', True))
         super().__init__(
             model = model,
+            ref_model = ref_model,
+            reward_model = reward_model,
+            judge = judge,
             args = args,
             data_collator = data_collator,
             train_dataset = train_dataset,
             eval_dataset = eval_dataset,
             processing_class = processing_class,
-            model_init = model_init,
+            peft_config = peft_config,
             compute_metrics = compute_metrics,
             callbacks = callbacks,
-            preprocess_logits_for_metrics = preprocess_logits_for_metrics,
-            peft_config = peft_config,**kwargs)
+            preprocess_logits_for_metrics = preprocess_logits_for_metrics,**kwargs)
         if "model" in locals() and hasattr(model, "for_inference"):
             model.for_inference()
         if hasattr(self, 'neftune_hook_handle'):

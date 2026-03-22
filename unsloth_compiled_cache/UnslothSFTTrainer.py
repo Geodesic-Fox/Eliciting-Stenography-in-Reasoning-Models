@@ -1,8 +1,8 @@
 """
 2026.3.4
-2026.3.5
-5.3.0
-0.24.0
+2026.3.10
+4.56.2
+0.22.2
 __UNSLOTH_VERSIONING__
 """
 
@@ -28,7 +28,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from unsloth_zoo.temporary_patches.common import torch_compile
 from typing import Any, List, Optional, Tuple, Union, Dict, Set, Callable
-from trl.trainer.sft_trainer import (Any, AutoProcessor, BaseTrainer, Callable, DataCollator, DataCollatorForLanguageModeling, DataCollatorForVisionLanguageModeling, Dataset, EvalPrediction, FLASH_ATTENTION_VARIANTS, IterableDataset, Optional, Path, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTConfig, SFTTrainer, TrainerCallback, TrainingArguments, Union, clone_chat_template, contextlib, create_model_from_path, dataclass, defaultdict, dft_loss, get_act_offloading_ctx_manager, is_conversational, logger, logging, nn, os, pack_dataset, pad, selective_log_softmax, torch, Any, AutoProcessor, Callable, DataCollator, DataCollatorForLanguageModeling, DataCollatorForVisionLanguageModeling, Dataset, EvalPrediction, FLASH_ATTENTION_VARIANTS, IterableDataset, Optional, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTConfig, SFTTrainer, TrainerCallback, TrainingArguments, Union, clone_chat_template, contextlib, create_model_from_path, defaultdict, dft_loss, get_act_offloading_ctx_manager, is_conversational, logger, os, pad, torch, Callable, DataCollator, DataCollatorForLanguageModeling, Dataset, IterableDataset, Optional, Union, os, pack_dataset, pad, PreTrainedModel, logger, os, torch, os)
+from trl.trainer.sft_trainer import (Any, AutoConfig, AutoProcessor, Callable, DataCollator, DataCollatorForLanguageModeling, DataCollatorForVisionLanguageModeling, Dataset, EvalPrediction, IterableDataset, Optional, Path, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTConfig, SFTTrainer, Trainer, TrainerCallback, TrainingArguments, Union, clone_chat_template, contextlib, dataclass, defaultdict, generate_model_card, get_act_offloading_ctx_manager, get_comet_experiment_url, is_conversational, is_wandb_available, logger, logging, nn, os, pack_dataset, pad, torch, transformers, Any, AutoConfig, AutoProcessor, Callable, DataCollator, DataCollatorForLanguageModeling, DataCollatorForVisionLanguageModeling, Dataset, EvalPrediction, IterableDataset, Optional, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTConfig, Trainer, TrainerCallback, TrainingArguments, Union, clone_chat_template, contextlib, defaultdict, get_act_offloading_ctx_manager, is_conversational, logger, nn, os, pad, torch, transformers, Callable, DataCollator, DataCollatorForLanguageModeling, Dataset, IterableDataset, Optional, Union, os, pack_dataset, pad, transformers, Optional, PreTrainedModel, Trainer, logger, os, torch, os)
 
 
 import os
@@ -339,12 +339,10 @@ class UnslothSFTConfig(SFTConfig):
     Parameters:
         > Parameters that control the model
 
-        model_init_kwargs (`dict[str, Any]`, *optional*):
+        model_init_kwargs (`dict[str, Any]` or `None`, *optional*, defaults to `None`):
             Keyword arguments for [`~transformers.AutoModelForCausalLM.from_pretrained`], used when the `model`
-            argument of the [`SFTTrainer`] is provided as a string. If you're training a MoE architecture and want to
-            include the load balancing/auxilliary loss as a part of the final loss, remember to set
-            `output_router_logits=True` in this dictionary.
-        chat_template_path (`str`, *optional*):
+            argument of the [`SFTTrainer`] is provided as a string.
+        chat_template_path (`str` or `None`, *optional*, defaults to `None`):
             If specified, sets the model's chat template. This can either be the path to a tokenizer (local directory
             or Hugging Face Hub model) or a direct path to a Jinja template file. When using a Jinja file, you must
             ensure that any special tokens referenced in the template are added to the tokenizer and that the model's
@@ -354,16 +352,16 @@ class UnslothSFTConfig(SFTConfig):
 
         dataset_text_field (`str`, *optional*, defaults to `"text"`):
             Name of the column that contains text data in the dataset.
-        dataset_kwargs (`dict[str, Any]`, *optional*):
+        dataset_kwargs (`dict[str, Any]` or `None`, *optional*, defaults to `None`):
             Dictionary of optional keyword arguments for the dataset preparation. The only supported key is
             `skip_prepare_dataset`. When the model is a VLM, `skip_prepare_dataset` is automatically treated as `True`
             regardless of the provided value, since preprocessing is done on the fly.
-        dataset_num_proc (`int`, *optional*):
+        dataset_num_proc (`int` or `None`, *optional*, defaults to `None`):
             Number of processes to use for processing the dataset.
-        eos_token (`str`, *optional*):
+        eos_token (`str` or `None`, *optional*, defaults to `None`):
             Token used to indicate the end of a turn or sequence. If `None`, it defaults to
             `processing_class.eos_token`.
-        pad_token (`str`, *optional*):
+        pad_token (`int` or `None`, *optional*, defaults to `None`):
             Token used for padding. If `None`, it defaults to `processing_class.pad_token`, or if that is also `None`,
             it falls back to `processing_class.eos_token`.
         max_length (`int` or `None`, *optional*, defaults to `1024`):
@@ -380,14 +378,14 @@ class UnslothSFTConfig(SFTConfig):
             supported with the FlashAttention 2 or 3, which can efficiently handle the flattened batch structure. When
             packing is enabled with strategy `"bfd"`, padding-free is enabled, regardless of the value of this
             parameter.
-        pad_to_multiple_of (`int`, *optional*):
+        pad_to_multiple_of (`int` or `None`, *optional*, defaults to `None`):
             If set, the sequences will be padded to a multiple of this value.
-        eval_packing (`bool`, *optional*):
+        eval_packing (`bool` or `None`, *optional*, defaults to `None`):
             Whether to pack the eval dataset. If `None`, uses the same value as `packing`.
 
         > Parameters that control the training
 
-        completion_only_loss (`bool`, *optional*):
+        completion_only_loss (`bool` or `None`, *optional*, defaults to `None`):
             Whether to compute loss only on the completion part of the sequence. If set to `True`, loss is computed
             only on the completion, which is supported only for [prompt-completion](#prompt-completion) datasets. If
             `False`, loss is computed on the entire sequence. If `None` (default), the behavior depends on the dataset:
@@ -397,9 +395,6 @@ class UnslothSFTConfig(SFTConfig):
             Whether to compute loss only on the assistant part of the sequence. If set to `True`, loss is computed only
             on the assistant responses, which is supported only for [conversational](#conversational) datasets. If
             `False`, loss is computed on the entire sequence.
-        loss_type (`str`, *optional*, defaults to `"nll"`):
-            Type of loss to use. Possible values are `"nll"` (negative log-likelihood, default) and `"dft"` (Dynamic
-            Fine-Tuning, as described in [this paper](https://huggingface.co/papers/2508.05629)).
         activation_offloading (`bool`, *optional*, defaults to `False`):
             Whether to offload the activations to the CPU.
     
@@ -427,113 +422,134 @@ class UnslothSFTConfig(SFTConfig):
     def __init__(
         self,
         output_dir = None,
+        overwrite_output_dir = None,
+        do_train = False,
+        do_eval = False,
+        do_predict = False,
+        eval_strategy = 'no',
+        prediction_loss_only = False,
         per_device_train_batch_size = 4,
-        num_train_epochs = 3.0,
-        max_steps = -1,
+        per_device_eval_batch_size = 4,
+        per_gpu_train_batch_size = None,
+        per_gpu_eval_batch_size = None,
+        gradient_accumulation_steps = 2,
+        eval_accumulation_steps = 2,
+        eval_delay = 0,
+        torch_empty_cache_steps = 250,
         learning_rate = 5e-05,
-        lr_scheduler_type = 'linear',
-        lr_scheduler_kwargs = None,
-        warmup_steps = 0.1,
-        optim = 'adamw_8bit',
-        optim_args = None,
         weight_decay = 0.01,
         adam_beta1 = 0.9,
         adam_beta2 = 0.999,
         adam_epsilon = 1e-08,
-        optim_target_modules = None,
-        gradient_accumulation_steps = 2,
-        average_tokens_across_devices = True,
         max_grad_norm = 1.0,
-        label_smoothing_factor = 0.0,
+        num_train_epochs = 3.0,
+        max_steps = -1,
+        lr_scheduler_type = 'linear',
+        warmup_ratio = 0.1,
+        warmup_steps = 0,
+        log_level = 'passive',
+        log_level_replica = 'warning',
+        log_on_each_node = True,
+        logging_dir = None,
+        logging_strategy = 'steps',
+        logging_first_step = False,
+        logging_steps = 1,
+        logging_nan_inf_filter = False,
+        save_strategy = 'steps',
+        save_steps = 500,
+        save_total_limit = None,
+        save_safetensors = True,
+        save_on_each_node = False,
+        save_only_model = False,
+        restore_callback_states_from_checkpoint = False,
+        no_cuda = False,
+        use_cpu = False,
+        use_mps_device = False,
+        seed = 3407,
+        data_seed = 3407,
+        jit_mode_eval = False,
+        use_ipex = False,
         bf16 = False,
         fp16 = False,
+        fp16_opt_level = 'O1',
+        half_precision_backend = 'auto',
         bf16_full_eval = False,
         fp16_full_eval = False,
         tf32 = None,
-        gradient_checkpointing = True,
-        gradient_checkpointing_kwargs = None,
-        torch_compile = False,
-        torch_compile_backend = None,
-        torch_compile_mode = None,
-        use_liger_kernel = False,
-        liger_kernel_config = None,
-        use_cache = False,
-        neftune_noise_alpha = None,
-        torch_empty_cache_steps = 250,
-        auto_find_batch_size = False,
-        logging_strategy = 'steps',
-        logging_steps = 1,
-        logging_first_step = False,
-        log_on_each_node = True,
-        logging_nan_inf_filter = False,
-        include_num_input_tokens_seen = False,
-        log_level = 'passive',
-        log_level_replica = 'warning',
-        disable_tqdm = None,
-        report_to = 'none',
-        run_name = None,
-        project = 'huggingface',
-        trackio_space_id = 'trackio',
-        eval_strategy = 'no',
+        local_rank = -1,
+        ddp_backend = None,
+        tpu_num_cores = None,
+        tpu_metrics_debug = False,
+        debug = '',
+        dataloader_drop_last = False,
         eval_steps = None,
-        eval_delay = 0,
-        per_device_eval_batch_size = 4,
-        prediction_loss_only = False,
-        eval_on_start = False,
-        eval_do_concat_batches = True,
-        eval_use_gather_object = False,
-        eval_accumulation_steps = 2,
-        batch_eval_metrics = False,
-        save_only_model = False,
-        save_strategy = 'steps',
-        save_steps = 500,
-        save_on_each_node = False,
-        save_total_limit = None,
-        enable_jit_checkpoint = False,
-        push_to_hub = False,
-        hub_token = None,
-        hub_private_repo = None,
-        hub_model_id = None,
-        hub_strategy = 'every_save',
-        hub_always_push = False,
-        hub_revision = None,
+        dataloader_num_workers = 0,
+        dataloader_prefetch_factor = None,
+        past_index = -1,
+        run_name = None,
+        disable_tqdm = None,
+        remove_unused_columns = True,
+        label_names = None,
         load_best_model_at_end = False,
         metric_for_best_model = None,
         greater_is_better = None,
         ignore_data_skip = False,
-        restore_callback_states_from_checkpoint = False,
-        full_determinism = False,
-        seed = 3407,
-        data_seed = 3407,
-        use_cpu = False,
+        fsdp = '',
+        fsdp_min_num_params = 0,
+        fsdp_config = None,
+        fsdp_transformer_layer_cls_to_wrap = None,
         accelerator_config = None,
         parallelism_config = None,
-        dataloader_drop_last = False,
-        dataloader_num_workers = 0,
-        dataloader_pin_memory = True,
-        dataloader_persistent_workers = False,
-        dataloader_prefetch_factor = None,
-        remove_unused_columns = True,
-        label_names = None,
-        train_sampling_strategy = 'random',
+        deepspeed = None,
+        label_smoothing_factor = 0.0,
+        optim = 'adamw_8bit',
+        optim_args = None,
+        adafactor = False,
+        group_by_length = False,
         length_column_name = 'length',
+        report_to = 'none',
         ddp_find_unused_parameters = None,
         ddp_bucket_cap_mb = None,
         ddp_broadcast_buffers = None,
-        ddp_backend = None,
-        ddp_timeout = 1800,
-        fsdp = None,
-        fsdp_config = None,
-        deepspeed = None,
-        debug = '',
+        dataloader_pin_memory = True,
+        dataloader_persistent_workers = False,
         skip_memory_metrics = True,
-        do_train = False,
-        do_eval = False,
-        do_predict = False,
+        use_legacy_prediction_loop = False,
+        push_to_hub = False,
         resume_from_checkpoint = None,
-        warmup_ratio = None,
-        logging_dir = None,
-        local_rank = -1,
+        hub_model_id = None,
+        hub_strategy = 'every_save',
+        hub_token = None,
+        hub_private_repo = None,
+        hub_always_push = False,
+        hub_revision = None,
+        gradient_checkpointing = True,
+        gradient_checkpointing_kwargs = None,
+        include_inputs_for_metrics = False,
+        eval_do_concat_batches = True,
+        fp16_backend = 'auto',
+        push_to_hub_model_id = None,
+        push_to_hub_organization = None,
+        push_to_hub_token = None,
+        mp_parameters = '',
+        auto_find_batch_size = False,
+        full_determinism = False,
+        torchdynamo = None,
+        ray_scope = 'last',
+        ddp_timeout = 1800,
+        torch_compile = False,
+        torch_compile_backend = None,
+        torch_compile_mode = None,
+        include_tokens_per_second = False,
+        include_num_input_tokens_seen = False,
+        neftune_noise_alpha = None,
+        optim_target_modules = None,
+        batch_eval_metrics = False,
+        eval_on_start = False,
+        use_liger_kernel = False,
+        liger_kernel_config = None,
+        eval_use_gather_object = False,
+        average_tokens_across_devices = True,
         model_init_kwargs = None,
         chat_template_path = None,
         dataset_text_field = 'text',
@@ -549,7 +565,6 @@ class UnslothSFTConfig(SFTConfig):
         eval_packing = None,
         completion_only_loss = None,
         assistant_only_loss = False,
-        loss_type = 'nll',
         activation_offloading = False,
         vllm_sampling_params = None,
         unsloth_num_chunks = -1,
@@ -584,113 +599,134 @@ class UnslothSFTConfig(SFTConfig):
         
         super().__init__(
             output_dir = output_dir,
+            overwrite_output_dir = overwrite_output_dir,
+            do_train = do_train,
+            do_eval = do_eval,
+            do_predict = do_predict,
+            eval_strategy = eval_strategy,
+            prediction_loss_only = prediction_loss_only,
             per_device_train_batch_size = per_device_train_batch_size,
-            num_train_epochs = num_train_epochs,
-            max_steps = max_steps,
+            per_device_eval_batch_size = per_device_eval_batch_size,
+            per_gpu_train_batch_size = per_gpu_train_batch_size,
+            per_gpu_eval_batch_size = per_gpu_eval_batch_size,
+            gradient_accumulation_steps = gradient_accumulation_steps,
+            eval_accumulation_steps = eval_accumulation_steps,
+            eval_delay = eval_delay,
+            torch_empty_cache_steps = torch_empty_cache_steps,
             learning_rate = learning_rate,
-            lr_scheduler_type = lr_scheduler_type,
-            lr_scheduler_kwargs = lr_scheduler_kwargs,
-            warmup_steps = warmup_steps,
-            optim = optim,
-            optim_args = optim_args,
             weight_decay = weight_decay,
             adam_beta1 = adam_beta1,
             adam_beta2 = adam_beta2,
             adam_epsilon = adam_epsilon,
-            optim_target_modules = optim_target_modules,
-            gradient_accumulation_steps = gradient_accumulation_steps,
-            average_tokens_across_devices = average_tokens_across_devices,
             max_grad_norm = max_grad_norm,
-            label_smoothing_factor = label_smoothing_factor,
+            num_train_epochs = num_train_epochs,
+            max_steps = max_steps,
+            lr_scheduler_type = lr_scheduler_type,
+            warmup_ratio = warmup_ratio,
+            warmup_steps = warmup_steps,
+            log_level = log_level,
+            log_level_replica = log_level_replica,
+            log_on_each_node = log_on_each_node,
+            logging_dir = logging_dir,
+            logging_strategy = logging_strategy,
+            logging_first_step = logging_first_step,
+            logging_steps = logging_steps,
+            logging_nan_inf_filter = logging_nan_inf_filter,
+            save_strategy = save_strategy,
+            save_steps = save_steps,
+            save_total_limit = save_total_limit,
+            save_safetensors = save_safetensors,
+            save_on_each_node = save_on_each_node,
+            save_only_model = save_only_model,
+            restore_callback_states_from_checkpoint = restore_callback_states_from_checkpoint,
+            no_cuda = no_cuda,
+            use_cpu = use_cpu,
+            use_mps_device = use_mps_device,
+            seed = seed,
+            data_seed = data_seed,
+            jit_mode_eval = jit_mode_eval,
+            use_ipex = use_ipex,
             bf16 = bf16,
             fp16 = fp16,
+            fp16_opt_level = fp16_opt_level,
+            half_precision_backend = half_precision_backend,
             bf16_full_eval = bf16_full_eval,
             fp16_full_eval = fp16_full_eval,
             tf32 = tf32,
-            gradient_checkpointing = gradient_checkpointing,
-            gradient_checkpointing_kwargs = gradient_checkpointing_kwargs,
-            torch_compile = torch_compile,
-            torch_compile_backend = torch_compile_backend,
-            torch_compile_mode = torch_compile_mode,
-            use_liger_kernel = use_liger_kernel,
-            liger_kernel_config = liger_kernel_config,
-            use_cache = use_cache,
-            neftune_noise_alpha = neftune_noise_alpha,
-            torch_empty_cache_steps = torch_empty_cache_steps,
-            auto_find_batch_size = auto_find_batch_size,
-            logging_strategy = logging_strategy,
-            logging_steps = logging_steps,
-            logging_first_step = logging_first_step,
-            log_on_each_node = log_on_each_node,
-            logging_nan_inf_filter = logging_nan_inf_filter,
-            include_num_input_tokens_seen = include_num_input_tokens_seen,
-            log_level = log_level,
-            log_level_replica = log_level_replica,
-            disable_tqdm = disable_tqdm,
-            report_to = report_to,
-            run_name = run_name,
-            project = project,
-            trackio_space_id = trackio_space_id,
-            eval_strategy = eval_strategy,
+            local_rank = local_rank,
+            ddp_backend = ddp_backend,
+            tpu_num_cores = tpu_num_cores,
+            tpu_metrics_debug = tpu_metrics_debug,
+            debug = debug,
+            dataloader_drop_last = dataloader_drop_last,
             eval_steps = eval_steps,
-            eval_delay = eval_delay,
-            per_device_eval_batch_size = per_device_eval_batch_size,
-            prediction_loss_only = prediction_loss_only,
-            eval_on_start = eval_on_start,
-            eval_do_concat_batches = eval_do_concat_batches,
-            eval_use_gather_object = eval_use_gather_object,
-            eval_accumulation_steps = eval_accumulation_steps,
-            batch_eval_metrics = batch_eval_metrics,
-            save_only_model = save_only_model,
-            save_strategy = save_strategy,
-            save_steps = save_steps,
-            save_on_each_node = save_on_each_node,
-            save_total_limit = save_total_limit,
-            enable_jit_checkpoint = enable_jit_checkpoint,
-            push_to_hub = push_to_hub,
-            hub_token = hub_token,
-            hub_private_repo = hub_private_repo,
-            hub_model_id = hub_model_id,
-            hub_strategy = hub_strategy,
-            hub_always_push = hub_always_push,
-            hub_revision = hub_revision,
+            dataloader_num_workers = dataloader_num_workers,
+            dataloader_prefetch_factor = dataloader_prefetch_factor,
+            past_index = past_index,
+            run_name = run_name,
+            disable_tqdm = disable_tqdm,
+            remove_unused_columns = remove_unused_columns,
+            label_names = label_names,
             load_best_model_at_end = load_best_model_at_end,
             metric_for_best_model = metric_for_best_model,
             greater_is_better = greater_is_better,
             ignore_data_skip = ignore_data_skip,
-            restore_callback_states_from_checkpoint = restore_callback_states_from_checkpoint,
-            full_determinism = full_determinism,
-            seed = seed,
-            data_seed = data_seed,
-            use_cpu = use_cpu,
+            fsdp = fsdp,
+            fsdp_min_num_params = fsdp_min_num_params,
+            fsdp_config = fsdp_config,
+            fsdp_transformer_layer_cls_to_wrap = fsdp_transformer_layer_cls_to_wrap,
             accelerator_config = accelerator_config,
             parallelism_config = parallelism_config,
-            dataloader_drop_last = dataloader_drop_last,
-            dataloader_num_workers = dataloader_num_workers,
-            dataloader_pin_memory = dataloader_pin_memory,
-            dataloader_persistent_workers = dataloader_persistent_workers,
-            dataloader_prefetch_factor = dataloader_prefetch_factor,
-            remove_unused_columns = remove_unused_columns,
-            label_names = label_names,
-            train_sampling_strategy = train_sampling_strategy,
+            deepspeed = deepspeed,
+            label_smoothing_factor = label_smoothing_factor,
+            optim = optim,
+            optim_args = optim_args,
+            adafactor = adafactor,
+            group_by_length = group_by_length,
             length_column_name = length_column_name,
+            report_to = report_to,
             ddp_find_unused_parameters = ddp_find_unused_parameters,
             ddp_bucket_cap_mb = ddp_bucket_cap_mb,
             ddp_broadcast_buffers = ddp_broadcast_buffers,
-            ddp_backend = ddp_backend,
-            ddp_timeout = ddp_timeout,
-            fsdp = fsdp,
-            fsdp_config = fsdp_config,
-            deepspeed = deepspeed,
-            debug = debug,
+            dataloader_pin_memory = dataloader_pin_memory,
+            dataloader_persistent_workers = dataloader_persistent_workers,
             skip_memory_metrics = skip_memory_metrics,
-            do_train = do_train,
-            do_eval = do_eval,
-            do_predict = do_predict,
+            use_legacy_prediction_loop = use_legacy_prediction_loop,
+            push_to_hub = push_to_hub,
             resume_from_checkpoint = resume_from_checkpoint,
-            warmup_ratio = warmup_ratio,
-            logging_dir = logging_dir,
-            local_rank = local_rank,
+            hub_model_id = hub_model_id,
+            hub_strategy = hub_strategy,
+            hub_token = hub_token,
+            hub_private_repo = hub_private_repo,
+            hub_always_push = hub_always_push,
+            hub_revision = hub_revision,
+            gradient_checkpointing = gradient_checkpointing,
+            gradient_checkpointing_kwargs = gradient_checkpointing_kwargs,
+            include_inputs_for_metrics = include_inputs_for_metrics,
+            eval_do_concat_batches = eval_do_concat_batches,
+            fp16_backend = fp16_backend,
+            push_to_hub_model_id = push_to_hub_model_id,
+            push_to_hub_organization = push_to_hub_organization,
+            push_to_hub_token = push_to_hub_token,
+            mp_parameters = mp_parameters,
+            auto_find_batch_size = auto_find_batch_size,
+            full_determinism = full_determinism,
+            torchdynamo = torchdynamo,
+            ray_scope = ray_scope,
+            ddp_timeout = ddp_timeout,
+            torch_compile = torch_compile,
+            torch_compile_backend = torch_compile_backend,
+            torch_compile_mode = torch_compile_mode,
+            include_tokens_per_second = include_tokens_per_second,
+            include_num_input_tokens_seen = include_num_input_tokens_seen,
+            neftune_noise_alpha = neftune_noise_alpha,
+            optim_target_modules = optim_target_modules,
+            batch_eval_metrics = batch_eval_metrics,
+            eval_on_start = eval_on_start,
+            use_liger_kernel = use_liger_kernel,
+            liger_kernel_config = liger_kernel_config,
+            eval_use_gather_object = eval_use_gather_object,
+            average_tokens_across_devices = average_tokens_across_devices,
             model_init_kwargs = model_init_kwargs,
             chat_template_path = chat_template_path,
             dataset_text_field = dataset_text_field,
@@ -706,7 +742,6 @@ class UnslothSFTConfig(SFTConfig):
             eval_packing = eval_packing,
             completion_only_loss = completion_only_loss,
             assistant_only_loss = assistant_only_loss,
-            loss_type = loss_type,
             activation_offloading = activation_offloading,**kwargs)
         self.vllm_sampling_params = vllm_sampling_params
         self.unsloth_num_chunks = unsloth_num_chunks
@@ -723,17 +758,16 @@ class UnslothSFTConfig(SFTConfig):
 
 pass
 
-class _UnslothSFTTrainer(BaseTrainer):
+class _UnslothSFTTrainer(Trainer):
     """"""
 
     _tag_names = ["trl", "sft"]
-    _name = "SFT"
 
     def __init__(
         self,
-        model: Union[str, PreTrainedModel],
+        model: Union[str, nn.Module, PreTrainedModel],
         args: Optional[Union[SFTConfig, TrainingArguments]] = None,
-        data_collator: Optional[DataCollator] = None,
+        data_collator: Optional[DataCollator] = None,  # type: ignore
         train_dataset: Optional[Union[Dataset, IterableDataset]] = None,
         eval_dataset: Optional[Union[Dataset, dict[str, Dataset]]] = None,
         processing_class: Optional[Union[PreTrainedTokenizerBase, ProcessorMixin]] = None,
@@ -758,15 +792,30 @@ class _UnslothSFTTrainer(BaseTrainer):
             args = SFTConfig(**dict_args)
 
         # Model
+        model_init_kwargs = args.model_init_kwargs or {}
         if isinstance(model, str):
-            model = create_model_from_path(model, **args.model_init_kwargs or {})
+            model_id = model
+            torch_dtype = model_init_kwargs.get("torch_dtype")
+            if isinstance(torch_dtype, torch.dtype) or torch_dtype == "auto" or torch_dtype is None:
+                pass  # torch_dtype is already a torch.dtype or "auto" or None
+            elif isinstance(torch_dtype, str) and torch_dtype in ["bfloat16", "float16", "float32"]:
+                torch_dtype = getattr(torch, torch_dtype)
+                model_init_kwargs["torch_dtype"] = torch_dtype
+            else:
+                raise ValueError(
+                    "Invalid `torch_dtype` passed to `SFTConfig`. Expected either 'auto' or a string representing "
+                    f"a valid `torch.dtype` (e.g., 'float32'), but got {torch_dtype}."
+                )
+            config = AutoConfig.from_pretrained(model_id)
+            architecture = getattr(transformers, config.architectures[0])
+            model = architecture.from_pretrained(model_id, **model_init_kwargs)
         else:
+            model_id = model.config._name_or_path
             if args.model_init_kwargs is not None:
                 logger.warning(
                     "You passed `model_init_kwargs` to the `SFTConfig`, but your model is already instantiated. "
                     "The `model_init_kwargs` will be ignored."
                 )
-        model_id = model.config._name_or_path
 
         # Processing class
         if processing_class is None:
@@ -860,7 +909,11 @@ class _UnslothSFTTrainer(BaseTrainer):
         # BFD packing requires padding-free mode; otherwise, the collator outputs padded attention masks, causing
         # FlashAttention to ignore position_ids and recompute them incorrectly from the padded attention mask.
         self.padding_free = args.padding_free or (args.packing and args.packing_strategy == "bfd")
-        use_flash_attention = model.config._attn_implementation in FLASH_ATTENTION_VARIANTS
+        use_flash_attention = model.config._attn_implementation in [
+            "flash_attention_2",
+            "flash_attention_3",
+            "kernels-community/vllm-flash-attn3",
+        ]
         if self.padding_free:
             if data_collator is not None:
                 raise ValueError("Passing a custom data collator is not supported when using padding-free.")
@@ -871,14 +924,14 @@ class _UnslothSFTTrainer(BaseTrainer):
                 )
             if not use_flash_attention:
                 logger.warning(
-                    "Padding-free training is enabled, but the attention implementation is not set to a supported "
-                    "flash attention variant. Padding-free training flattens batches into a single sequence, and only "
-                    "the following implementations are known to reliably support this: "
-                    f"{', '.join(sorted(FLASH_ATTENTION_VARIANTS))}. Using other implementations may lead to "
-                    "unexpected behavior. To ensure compatibility, set `attn_implementation` in the model "
-                    "configuration to one of these supported options or verify that your attention mechanism can "
-                    "handle flattened sequences."
+                    "Padding-free training is enabled, but the attention implementation is not set to "
+                    "'flash_attention_2'. Padding-free training flattens batches into a single sequence, and "
+                    "'flash_attention_2' is the only known attention mechanism that reliably supports this. Using "
+                    "other implementations may lead to unexpected behavior. To ensure compatibility, set "
+                    "`attn_implementation='flash_attention_2'` in the model configuration, or verify that your "
+                    "attention mechanism can handle flattened sequences."
                 )
+
         # Decide whether to use completion-only loss: if not specified, then it is set to True if the dataset format
         # is prompt-completion, and False if the dataset format is language modeling.
         dataset_sample = next(iter(train_dataset))
@@ -887,21 +940,7 @@ class _UnslothSFTTrainer(BaseTrainer):
         else:
             self.completion_only_loss = args.completion_only_loss
 
-        self._is_vision_dataset = "image" in dataset_sample or "images" in dataset_sample
-        # Unsloth: override _is_vlm for VLM models that pass a bare tokenizer
-        if not self._is_vlm and self._is_vision_dataset:
-            _m = model
-            if hasattr(_m, "model"): _m = _m.model
-            if hasattr(getattr(_m, "config", None), "vision_config") or \
-               _m.__class__.__name__.endswith("ForConditionalGeneration"):
-                self._is_vlm = True
-        if self._is_vision_dataset and not self._is_vlm:
-            raise ValueError(
-                "The dataset appears to be vision-related (contains 'image' or 'images' keys), but the provided "
-                "model does not seem to be a vision-language model. Please check your model and dataset."
-            )
-
-        if data_collator is None and not self._is_vision_dataset:
+        if data_collator is None and not self._is_vlm:
             # Get the pad token: if not provided, use the one from the processing class or the eos token
             # if the processing class does not have a pad token.
             pad_token = args.pad_token or tokenizer.pad_token or tokenizer.eos_token
@@ -916,9 +955,11 @@ class _UnslothSFTTrainer(BaseTrainer):
                 pad_token_id=pad_token_id,
                 completion_only_loss=self.completion_only_loss,
                 padding_free=self.padding_free,
+                # Using position_ids without flash_attn hurts the training
+                return_position_ids=use_flash_attention,
                 pad_to_multiple_of=args.pad_to_multiple_of,
             )
-        elif data_collator is None and self._is_vision_dataset:
+        elif data_collator is None and self._is_vlm:
             data_collator = DataCollatorForVisionLanguageModeling(
                 processor=processing_class,
                 max_length=args.max_length,
@@ -929,12 +970,12 @@ class _UnslothSFTTrainer(BaseTrainer):
 
         if args.packing and args.packing_strategy == "bfd" and not use_flash_attention:
             logger.warning(
-                "You are using packing, but the attention implementation is not set to a supported flash attention "
-                "variant. Packing gathers multiple samples into a single sequence, and only the following "
-                f"implementations are known to reliably support this: {', '.join(sorted(FLASH_ATTENTION_VARIANTS))}. "
-                "Using other implementations may lead to cross-contamination between samples. To avoid this, either "
-                "disable packing by setting `packing=False`, or set `attn_implementation` in the model configuration "
-                "to one of these supported options."
+                "You are using packing, but the attention implementation is not set to 'flash_attention_2' or "
+                "'kernels-community/vllm-flash-attn3'. Packing flattens batches into a single sequence, and Flash "
+                "Attention is the only known attention mechanisms that reliably support this. Using other "
+                "implementations may lead to cross-contamination between batches. To avoid this, either disable "
+                "packing by setting `packing=False`, or set `attn_implementation='flash_attention_2'` or "
+                "`attn_implementation='kernels-community/vllm-flash-attn3'` in the model configuration."
             )
         if args.assistant_only_loss and not is_conversational(dataset_sample):
             raise ValueError(
@@ -946,9 +987,7 @@ class _UnslothSFTTrainer(BaseTrainer):
         # Skip dataset preparation if `skip_prepare_dataset=True` in `dataset_kwargs`, or if it's a VLM, where
         # preprocessing [e.g., image-to-pixel conversion] is too costly and done on the fly instead.
         skip_prepare_dataset = (
-            args.dataset_kwargs is not None
-            and args.dataset_kwargs.get("skip_prepare_dataset", False)
-            or self._is_vision_dataset
+            args.dataset_kwargs is not None and args.dataset_kwargs.get("skip_prepare_dataset", False) or self._is_vlm
         )
         if not skip_prepare_dataset:
             if self.completion_only_loss and formatting_func:
@@ -973,20 +1012,6 @@ class _UnslothSFTTrainer(BaseTrainer):
                     eval_dataset = self._prepare_dataset(
                         eval_dataset, processing_class, args, packing, formatting_func, "eval"
                     )
-
-        # Loss function
-        if args.loss_type == "nll":
-            pass  # use the default loss
-        elif args.loss_type == "dft":
-            if compute_loss_func is not None:
-                raise ValueError(
-                    "You passed a `compute_loss_func` together with `loss_type='dft'` to the `SFTTrainer`. "
-                    "When using `loss_type='dft'`, the loss function is internally set to the DFT loss, so passing a "
-                    "`compute_loss_func` is not allowed."
-                )
-            compute_loss_func = dft_loss
-        else:
-            raise ValueError(f"Invalid `loss_type` {args.loss_type} passed. Supported values are 'nll' and 'dft'.")
 
         # Initialize the metrics
         self._metrics = {"train": defaultdict(list), "eval": defaultdict(list)}
@@ -1022,8 +1047,6 @@ class _UnslothSFTTrainer(BaseTrainer):
         # Add tags for models that have been loaded with the correct transformers version
         if hasattr(self.model, "add_model_tags"):
             self.model.add_model_tags(self._tag_names)
-
-        self.aux_loss_enabled = getattr(model.config, "output_router_logits", False)
 
     def _prepare_dataset(
         self,
@@ -1215,7 +1238,7 @@ class _UnslothSFTTrainer(BaseTrainer):
         # and "attention_mask"). When using `train_on_completion_only` we add a "completion_mask" column to the
         # dataset. So we need to override the default signature columns to include "completion_mask" as well.
         if self._signature_columns is None:
-            if self._is_vision_dataset:
+            if self._is_vlm:
                 self._signature_columns = ["messages", "prompt", "completion", "images", "input_ids", "labels", "attention_mask", "seq_lengths", "completion_mask", "assistant_masks"]
             else:
                 self._signature_columns = ["input_ids", "labels", "seq_lengths", "completion_mask", "assistant_masks"]
@@ -1257,12 +1280,66 @@ class _UnslothSFTTrainer(BaseTrainer):
             model_name = self.args.hub_model_id.split("/")[-1]
         self.create_model_card(model_name=model_name)
         super()._save_checkpoint(model, trial)
+
+    def create_model_card(
+        self,
+        model_name: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+        tags: Union[str, list[str], None] = None,
+    ):
+        """
+        Creates a draft of a model card using the information available to the `Trainer`.
+
+        Args:
+            model_name (`str` or `None`, *optional*, defaults to `None`):
+                Name of the model.
+            dataset_name (`str` or `None`, *optional*, defaults to `None`):
+                Name of the dataset used for training.
+            tags (`str`, `list[str]` or `None`, *optional*, defaults to `None`):
+                Tags to be associated with the model card.
+        """
+        if not self.is_world_process_zero():
+            return
+
+        if hasattr(self.model.config, "_name_or_path") and not os.path.isdir(self.model.config._name_or_path):
+            base_model = self.model.config._name_or_path
+        else:
+            base_model = None
+
+        # normalize `tags` to a mutable set
+        if tags is None:
+            tags = set()
+        elif isinstance(tags, str):
+            tags = {tags}
+        else:
+            tags = set(tags)
+
+        if hasattr(self.model.config, "unsloth_version"):
+            tags.add("unsloth")
+
+        if "JOB_ID" in os.environ:
+            tags.add("hf_jobs")
+
+        tags.update(self._tag_names)
+
+        model_card = generate_model_card(
+            base_model=base_model,
+            model_name=model_name,
+            hub_model_id=self.hub_model_id,
+            dataset_name=dataset_name,
+            tags=list(tags),
+            wandb_url=wandb.run.url if is_wandb_available() and wandb.run is not None else None,
+            comet_url=get_comet_experiment_url(),
+            trainer_name="SFT",
+        )
+
+        model_card.save(os.path.join(self.args.output_dir, "README.md"))
 class UnslothSFTTrainer(_UnslothSFTTrainer):
     """
     
     Trainer for Supervised Fine-Tuning (SFT) method.
 
-    This class is a wrapper around the [`~transformers.Trainer`] class and inherits all of its attributes and methods.
+    This class is a wrapper around the [`transformers.Trainer`] class and inherits all of its attributes and methods.
 
     Example:
 
@@ -1283,17 +1360,14 @@ class UnslothSFTTrainer(_UnslothSFTTrainer):
             - A string, being the *model id* of a pretrained model hosted inside a model repo on huggingface.co, or a
               path to a *directory* containing model weights saved using
               [`~transformers.PreTrainedModel.save_pretrained`], e.g., `'./my_model_directory/'`. The model is loaded
-              using `<ModelArchitecture>.from_pretrained` (where `<ModelArchitecture>` is derived from the model
-              config) with the keyword arguments in `args.model_init_kwargs`.
-            - A [`~transformers.PreTrainedModel`] object.
-            If you're training a model with an MoE architecture and want to include the load balancing/auxilliary loss
-            as a part of the final loss, remember to set the `output_router_logits` config of the model to `True`.
-        args ([`SFTConfig`], *optional*):
+              using [`~transformers.AutoModelForCausalLM.from_pretrained`] with the keyword arguments in
+              `args.model_init_kwargs`.
+            - A [`~transformers.PreTrainedModel`] object. Only causal language models are supported.
+        args ([`SFTConfig`], *optional*, defaults to `None`):
             Configuration for this trainer. If `None`, a default configuration is used.
-        data_collator ([`~transformers.DataCollator`], *optional*):
+        data_collator (`DataCollator`, *optional*):
             Function to use to form a batch from a list of elements of the processed `train_dataset` or `eval_dataset`.
-            Will default to [`~trainer.sft_trainer.DataCollatorForLanguageModeling`] if the model is a language model
-            and [`~trainer.sft_trainer.DataCollatorForVisionLanguageModeling`] if the model is a vision-language model.
+            Will default to a custom [`DataCollatorForLanguageModeling`].
         train_dataset ([`~datasets.Dataset`] or [`~datasets.IterableDataset`]):
             Dataset to use for training. SFT supports both [language modeling](#language-modeling) type and
             [prompt-completion](#prompt-completion) type. The format of the samples can be either:
@@ -1303,48 +1377,40 @@ class UnslothSFTTrainer(_UnslothSFTTrainer):
               and content).
 
             The trainer also supports processed datasets (tokenized) as long as they contain an `input_ids` field.
-        eval_dataset ([`~datasets.Dataset`], [`~datasets.IterableDataset`] or `dict[str, Union[Dataset, IterableDataset]]`):
+        eval_dataset ([`~datasets.Dataset`], [`~datasets.IterableDataset`] or `dict[str, Union[Dataset,
+        IterableDataset]]`):
             Dataset to use for evaluation. It must meet the same requirements as `train_dataset`.
-        processing_class ([`~transformers.PreTrainedTokenizerBase`], [`~transformers.ProcessorMixin`], *optional*):
+        processing_class ([`~transformers.PreTrainedTokenizerBase`], [`~transformers.ProcessorMixin`] or `None`, *optional*, defaults to `None`):
             Processing class used to process the data. If `None`, the processing class is loaded from the model's name
             with [`~transformers.AutoProcessor.from_pretrained`]. A padding token, `tokenizer.pad_token`, must be set.
             If the processing class has not set a padding token, `tokenizer.eos_token` will be used as the default.
-        compute_loss_func (`Callable`, *optional*):
-            A function that accepts the raw model outputs, labels, and the number of items in the entire accumulated
-            batch (batch_size * gradient_accumulation_steps) and returns the loss. For example, see the default [loss
-            function](https://github.com/huggingface/transformers/blob/052e652d6d53c2b26ffde87e039b723949a53493/src/transformers/trainer.py#L3618)
-            used by [`Trainer`].
-        compute_metrics (`Callable[[EvalPrediction], dict]`, *optional*):
-            The function that will be used to compute metrics at evaluation. Must take a
-            [`~transformers.EvalPrediction`] and return a dictionary string to metric values. When passing
-            [`SFTConfig`] with `batch_eval_metrics` set to `True`, your `compute_metrics` function must take a boolean
-            `compute_result` argument. This will be triggered after the last eval batch to signal that the function
-            needs to calculate and return the global summary statistics rather than accumulating the batch-level
-            statistics.
-        callbacks (list of [`~transformers.TrainerCallback`], *optional*):
+        callbacks (list of [`~transformers.TrainerCallback`], *optional*, defaults to `None`):
             List of callbacks to customize the training loop. Will add those to the list of default callbacks detailed
             in [here](https://huggingface.co/docs/transformers/main_classes/callback).
 
             If you want to remove one of the default callbacks used, use the [`~transformers.Trainer.remove_callback`]
             method.
-        optimizers (`tuple[Optional[torch.optim.Optimizer], Optional[torch.optim.lr_scheduler.LambdaLR]]`, *optional*, defaults to `(None, None)`):
-            A tuple containing the optimizer and the scheduler to use. Will default to an instance of `AdamW` on your
-            model and a scheduler given by [`~transformers.get_linear_schedule_with_warmup`] controlled by `args`.
-        optimizer_cls_and_kwargs (`tuple[Type[torch.optim.Optimizer], Dict[str, Any]]`, *optional*):
+        optimizers (`tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]`, *optional*, defaults to `(None,
+        None)`):
+            A tuple containing the optimizer and the scheduler to use. Will default to an instance of [`AdamW`] on your
+            model and a scheduler given by [`get_linear_schedule_with_warmup`] controlled by `args`.
+        optimizer_cls_and_kwargs (`Tuple[Type[torch.optim.Optimizer], Dict[str, Any]]`, *optional*, defaults to
+        `None`):
             A tuple containing the optimizer class and keyword arguments to use. Overrides `optim` and `optim_args` in
             `args`. Incompatible with the `optimizers` argument.
 
             Unlike `optimizers`, this argument avoids the need to place model parameters on the correct devices before
             initializing the Trainer.
-        preprocess_logits_for_metrics (`Callable[[torch.Tensor, torch.Tensor], torch.Tensor]`, *optional*):
+        preprocess_logits_for_metrics (`Callable[[torch.Tensor, torch.Tensor], torch.Tensor]`, *optional*, defaults to
+        `None`):
             A function that preprocess the logits right before caching them at each evaluation step. Must take two
             tensors, the logits and the labels, and return the logits once processed as desired. The modifications made
             by this function will be reflected in the predictions received by `compute_metrics`.
 
             Note that the labels (second parameter) will be `None` if the dataset does not have them.
-        peft_config ([`~peft.PeftConfig`], *optional*):
+        peft_config ([`~peft.PeftConfig`], *optional*, defaults to `None`):
             PEFT configuration used to wrap the model. If `None`, the model is not wrapped.
-        formatting_func (`Callable`, *optional*):
+        formatting_func (`Optional[Callable]`):
             Formatting function applied to the dataset before tokenization. Applying the formatting function explicitly
             converts the dataset into a [language modeling](#language-modeling) type.
     

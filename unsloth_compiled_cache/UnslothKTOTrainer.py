@@ -1,8 +1,8 @@
 """
 2026.3.4
-2026.3.5
-5.3.0
-0.24.0
+2026.3.10
+4.56.2
+0.22.2
 __UNSLOTH_VERSIONING__
 """
 
@@ -28,7 +28,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from unsloth_zoo.temporary_patches.common import torch_compile
 from typing import Any, List, Optional, Tuple, Union, Dict, Set, Callable
-from trl.trainer.kto_trainer import (Any, AutoModelForCausalLM, BaseImageProcessor, BaseTrainer, Callable, DPODataCollatorWithPadding, DataCollator, DataLoader, Dataset, EvalLoopOutput, F, FeatureExtractionMixin, KTOConfig, KTOTrainer, Literal, Optional, PartialState, Path, PeftModel, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SequentialSampler, TrainerCallback, TrainingArguments, Union, _get_kl_dataset, _process_tokens, _tokenize, autocast, concatenate_datasets, contextmanager, create_reference_model, defaultdict, disable_dropout_in_model, has_length, inspect, is_comet_available, is_liger_kernel_available, is_peft_available, is_wandb_available, itemgetter, log_table_to_comet_experiment, logger, logging, maybe_apply_chat_template, maybe_extract_prompt, maybe_unpair_preference_dataset, nn, np, nullcontext, os, pad_to_length, pd, peft_module_casting_to_bf16, prepare_deepspeed, prepare_model_for_kbit_training, random, selective_log_softmax, textwrap, torch, tqdm, warnings, AutoModelForCausalLM, BaseImageProcessor, Callable, DPODataCollatorWithPadding, DataCollator, Dataset, EvalLoopOutput, F, FeatureExtractionMixin, KTOConfig, KTOTrainer, Optional, PartialState, PeftModel, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, TrainerCallback, TrainingArguments, Union, autocast, concatenate_datasets, create_reference_model, defaultdict, disable_dropout_in_model, inspect, is_comet_available, is_liger_kernel_available, is_peft_available, is_wandb_available, logger, maybe_apply_chat_template, maybe_extract_prompt, maybe_unpair_preference_dataset, nn, np, os, peft_module_casting_to_bf16, prepare_deepspeed, prepare_model_for_kbit_training, torch, warnings, F, PeftModel, PreTrainedModel, is_peft_available, logger, os, torch, F, nn, np, os, selective_log_softmax, torch)
+from trl.trainer.kto_trainer import (Any, AutoModelForCausalLM, BaseImageProcessor, Callable, DPODataCollatorWithPadding, DataCollator, DataLoader, Dataset, EvalLoopOutput, F, FeatureExtractionMixin, KTOConfig, KTOTrainer, Literal, Optional, PartialState, Path, PeftModel, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SequentialSampler, Trainer, TrainerCallback, TrainingArguments, Union, _get_kl_dataset, _process_tokens, _tokenize, autocast, concatenate_datasets, contextmanager, create_reference_model, defaultdict, disable_dropout_in_model, generate_model_card, get_comet_experiment_url, has_length, inspect, is_comet_available, is_liger_kernel_available, is_peft_available, is_wandb_available, itemgetter, log_table_to_comet_experiment, logger, logging, maybe_apply_chat_template, maybe_extract_prompt, maybe_unpair_preference_dataset, nn, np, nullcontext, os, pad_to_length, pd, peft_module_casting_to_bf16, prepare_deepspeed, prepare_model_for_kbit_training, random, selective_log_softmax, textwrap, torch, tqdm, AutoModelForCausalLM, BaseImageProcessor, Callable, DPODataCollatorWithPadding, DataCollator, Dataset, EvalLoopOutput, F, FeatureExtractionMixin, KTOConfig, KTOTrainer, Optional, PartialState, PeftModel, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, Trainer, TrainerCallback, TrainingArguments, Union, autocast, concatenate_datasets, create_reference_model, defaultdict, disable_dropout_in_model, inspect, is_comet_available, is_liger_kernel_available, is_peft_available, is_wandb_available, logger, maybe_apply_chat_template, maybe_extract_prompt, maybe_unpair_preference_dataset, nn, np, os, peft_module_casting_to_bf16, prepare_deepspeed, prepare_model_for_kbit_training, torch, F, Optional, PeftModel, PreTrainedModel, Trainer, is_peft_available, logger, os, torch, F, nn, np, os, selective_log_softmax, torch)
 
 
 import os
@@ -342,7 +342,7 @@ class UnslothKTOConfig(KTOConfig):
             to use the default data collator.
         max_prompt_length (`int` or `None`, *optional*, defaults to `512`):
             Maximum length of the prompt. This argument is required if you want to use the default data collator.
-        max_completion_length (`int`, *optional*):
+        max_completion_length (`int` or `None`, *optional*, defaults to `None`):
             Maximum length of the completion. This argument is required if you want to use the default data collator
             and your model is an encoder-decoder.
         beta (`float`, *optional*, defaults to `0.1`):
@@ -361,7 +361,7 @@ class UnslothKTOConfig(KTOConfig):
             Undesirable losses are weighed by this factor to counter unequal number of desirable and undesirable pairs.
         label_pad_token_id (`int`, *optional*, defaults to `-100`):
             Label pad token id. This argument is required if you want to use the default data collator.
-        padding_value (`int`, *optional*):
+        padding_value (`int` or `None`, *optional*, defaults to `None`):
             Padding value to use. If `None`, the padding value of the tokenizer is used.
         truncation_mode (`str`, *optional*, defaults to `"keep_end"`):
             Truncation mode to use when the prompt is too long. Possible values are `"keep_end"` or `"keep_start"`.
@@ -369,19 +369,19 @@ class UnslothKTOConfig(KTOConfig):
         generate_during_eval (`bool`, *optional*, defaults to `False`):
             If `True`, generates and logs completions from both the model and the reference model to W&B or Comet
             during evaluation.
-        is_encoder_decoder (`bool`, *optional*):
+        is_encoder_decoder (`bool` or `None`, *optional*, defaults to `None`):
             When using the `model_init` argument (callable) to instantiate the model instead of the `model` argument,
             you need to specify if the model returned by the callable is an encoder-decoder model.
         precompute_ref_log_probs (`bool`, *optional*, defaults to `False`):
             Whether to precompute reference model log probabilities for training and evaluation datasets. This is
             useful when training without the reference model to reduce the total GPU memory needed.
-        model_init_kwargs (`dict[str, Any]`, *optional*):
+        model_init_kwargs (`dict[str, Any]` or `None`, *optional*, defaults to `None`):
             Keyword arguments to pass to `AutoModelForCausalLM.from_pretrained` when instantiating the model from a
             string.
-        ref_model_init_kwargs (`dict[str, Any]`, *optional*):
+        ref_model_init_kwargs (`dict[str, Any]` or `None`, *optional*, defaults to `None`):
             Keyword arguments to pass to `AutoModelForCausalLM.from_pretrained` when instantiating the reference model
             from a string.
-        dataset_num_proc: (`int`, *optional*):
+        dataset_num_proc: (`int` or `None`, *optional*, defaults to `None`):
             Number of processes to use for processing the dataset.
         disable_dropout (`bool`, *optional*, defaults to `True`):
             Whether to disable dropout in the model and reference model.
@@ -415,113 +415,134 @@ class UnslothKTOConfig(KTOConfig):
     def __init__(
         self,
         output_dir = None,
+        overwrite_output_dir = None,
+        do_train = False,
+        do_eval = False,
+        do_predict = False,
+        eval_strategy = 'no',
+        prediction_loss_only = False,
         per_device_train_batch_size = 4,
-        num_train_epochs = 3.0,
-        max_steps = -1,
+        per_device_eval_batch_size = 4,
+        per_gpu_train_batch_size = None,
+        per_gpu_eval_batch_size = None,
+        gradient_accumulation_steps = 2,
+        eval_accumulation_steps = 2,
+        eval_delay = 0,
+        torch_empty_cache_steps = 250,
         learning_rate = 5e-05,
-        lr_scheduler_type = 'linear',
-        lr_scheduler_kwargs = None,
-        warmup_steps = 0.1,
-        optim = 'adamw_8bit',
-        optim_args = None,
         weight_decay = 0.01,
         adam_beta1 = 0.9,
         adam_beta2 = 0.999,
         adam_epsilon = 1e-08,
-        optim_target_modules = None,
-        gradient_accumulation_steps = 2,
-        average_tokens_across_devices = True,
         max_grad_norm = 1.0,
-        label_smoothing_factor = 0.0,
+        num_train_epochs = 3.0,
+        max_steps = -1,
+        lr_scheduler_type = 'linear',
+        warmup_ratio = 0.1,
+        warmup_steps = 0,
+        log_level = 'passive',
+        log_level_replica = 'warning',
+        log_on_each_node = True,
+        logging_dir = None,
+        logging_strategy = 'steps',
+        logging_first_step = False,
+        logging_steps = 1,
+        logging_nan_inf_filter = False,
+        save_strategy = 'steps',
+        save_steps = 500,
+        save_total_limit = None,
+        save_safetensors = True,
+        save_on_each_node = False,
+        save_only_model = False,
+        restore_callback_states_from_checkpoint = False,
+        no_cuda = False,
+        use_cpu = False,
+        use_mps_device = False,
+        seed = 3407,
+        data_seed = 3407,
+        jit_mode_eval = False,
+        use_ipex = False,
         bf16 = False,
         fp16 = False,
+        fp16_opt_level = 'O1',
+        half_precision_backend = 'auto',
         bf16_full_eval = False,
         fp16_full_eval = False,
         tf32 = None,
-        gradient_checkpointing = True,
-        gradient_checkpointing_kwargs = None,
-        torch_compile = False,
-        torch_compile_backend = None,
-        torch_compile_mode = None,
-        use_liger_kernel = False,
-        liger_kernel_config = None,
-        use_cache = False,
-        neftune_noise_alpha = None,
-        torch_empty_cache_steps = 250,
-        auto_find_batch_size = False,
-        logging_strategy = 'steps',
-        logging_steps = 1,
-        logging_first_step = False,
-        log_on_each_node = True,
-        logging_nan_inf_filter = False,
-        include_num_input_tokens_seen = False,
-        log_level = 'passive',
-        log_level_replica = 'warning',
-        disable_tqdm = None,
-        report_to = 'none',
-        run_name = None,
-        project = 'huggingface',
-        trackio_space_id = 'trackio',
-        eval_strategy = 'no',
+        local_rank = -1,
+        ddp_backend = None,
+        tpu_num_cores = None,
+        tpu_metrics_debug = False,
+        debug = '',
+        dataloader_drop_last = False,
         eval_steps = None,
-        eval_delay = 0,
-        per_device_eval_batch_size = 4,
-        prediction_loss_only = False,
-        eval_on_start = False,
-        eval_do_concat_batches = True,
-        eval_use_gather_object = False,
-        eval_accumulation_steps = 2,
-        batch_eval_metrics = False,
-        save_only_model = False,
-        save_strategy = 'steps',
-        save_steps = 500,
-        save_on_each_node = False,
-        save_total_limit = None,
-        enable_jit_checkpoint = False,
-        push_to_hub = False,
-        hub_token = None,
-        hub_private_repo = None,
-        hub_model_id = None,
-        hub_strategy = 'every_save',
-        hub_always_push = False,
-        hub_revision = None,
+        dataloader_num_workers = 0,
+        dataloader_prefetch_factor = None,
+        past_index = -1,
+        run_name = None,
+        disable_tqdm = None,
+        remove_unused_columns = True,
+        label_names = None,
         load_best_model_at_end = False,
         metric_for_best_model = None,
         greater_is_better = None,
         ignore_data_skip = False,
-        restore_callback_states_from_checkpoint = False,
-        full_determinism = False,
-        seed = 3407,
-        data_seed = 3407,
-        use_cpu = False,
+        fsdp = '',
+        fsdp_min_num_params = 0,
+        fsdp_config = None,
+        fsdp_transformer_layer_cls_to_wrap = None,
         accelerator_config = None,
         parallelism_config = None,
-        dataloader_drop_last = False,
-        dataloader_num_workers = 0,
-        dataloader_pin_memory = True,
-        dataloader_persistent_workers = False,
-        dataloader_prefetch_factor = None,
-        remove_unused_columns = True,
-        label_names = None,
-        train_sampling_strategy = 'random',
+        deepspeed = None,
+        label_smoothing_factor = 0.0,
+        optim = 'adamw_8bit',
+        optim_args = None,
+        adafactor = False,
+        group_by_length = False,
         length_column_name = 'length',
+        report_to = 'none',
         ddp_find_unused_parameters = None,
         ddp_bucket_cap_mb = None,
         ddp_broadcast_buffers = None,
-        ddp_backend = None,
-        ddp_timeout = 1800,
-        fsdp = None,
-        fsdp_config = None,
-        deepspeed = None,
-        debug = '',
+        dataloader_pin_memory = True,
+        dataloader_persistent_workers = False,
         skip_memory_metrics = True,
-        do_train = False,
-        do_eval = False,
-        do_predict = False,
+        use_legacy_prediction_loop = False,
+        push_to_hub = False,
         resume_from_checkpoint = None,
-        warmup_ratio = None,
-        logging_dir = None,
-        local_rank = -1,
+        hub_model_id = None,
+        hub_strategy = 'every_save',
+        hub_token = None,
+        hub_private_repo = None,
+        hub_always_push = False,
+        hub_revision = None,
+        gradient_checkpointing = True,
+        gradient_checkpointing_kwargs = None,
+        include_inputs_for_metrics = False,
+        eval_do_concat_batches = True,
+        fp16_backend = 'auto',
+        push_to_hub_model_id = None,
+        push_to_hub_organization = None,
+        push_to_hub_token = None,
+        mp_parameters = '',
+        auto_find_batch_size = False,
+        full_determinism = False,
+        torchdynamo = None,
+        ray_scope = 'last',
+        ddp_timeout = 1800,
+        torch_compile = False,
+        torch_compile_backend = None,
+        torch_compile_mode = None,
+        include_tokens_per_second = False,
+        include_num_input_tokens_seen = False,
+        neftune_noise_alpha = None,
+        optim_target_modules = None,
+        batch_eval_metrics = False,
+        eval_on_start = False,
+        use_liger_kernel = False,
+        liger_kernel_config = None,
+        eval_use_gather_object = False,
+        average_tokens_across_devices = True,
         max_length = 1024,
         max_prompt_length = 512,
         max_completion_length = None,
@@ -568,113 +589,134 @@ class UnslothKTOConfig(KTOConfig):
         
         super().__init__(
             output_dir = output_dir,
+            overwrite_output_dir = overwrite_output_dir,
+            do_train = do_train,
+            do_eval = do_eval,
+            do_predict = do_predict,
+            eval_strategy = eval_strategy,
+            prediction_loss_only = prediction_loss_only,
             per_device_train_batch_size = per_device_train_batch_size,
-            num_train_epochs = num_train_epochs,
-            max_steps = max_steps,
+            per_device_eval_batch_size = per_device_eval_batch_size,
+            per_gpu_train_batch_size = per_gpu_train_batch_size,
+            per_gpu_eval_batch_size = per_gpu_eval_batch_size,
+            gradient_accumulation_steps = gradient_accumulation_steps,
+            eval_accumulation_steps = eval_accumulation_steps,
+            eval_delay = eval_delay,
+            torch_empty_cache_steps = torch_empty_cache_steps,
             learning_rate = learning_rate,
-            lr_scheduler_type = lr_scheduler_type,
-            lr_scheduler_kwargs = lr_scheduler_kwargs,
-            warmup_steps = warmup_steps,
-            optim = optim,
-            optim_args = optim_args,
             weight_decay = weight_decay,
             adam_beta1 = adam_beta1,
             adam_beta2 = adam_beta2,
             adam_epsilon = adam_epsilon,
-            optim_target_modules = optim_target_modules,
-            gradient_accumulation_steps = gradient_accumulation_steps,
-            average_tokens_across_devices = average_tokens_across_devices,
             max_grad_norm = max_grad_norm,
-            label_smoothing_factor = label_smoothing_factor,
+            num_train_epochs = num_train_epochs,
+            max_steps = max_steps,
+            lr_scheduler_type = lr_scheduler_type,
+            warmup_ratio = warmup_ratio,
+            warmup_steps = warmup_steps,
+            log_level = log_level,
+            log_level_replica = log_level_replica,
+            log_on_each_node = log_on_each_node,
+            logging_dir = logging_dir,
+            logging_strategy = logging_strategy,
+            logging_first_step = logging_first_step,
+            logging_steps = logging_steps,
+            logging_nan_inf_filter = logging_nan_inf_filter,
+            save_strategy = save_strategy,
+            save_steps = save_steps,
+            save_total_limit = save_total_limit,
+            save_safetensors = save_safetensors,
+            save_on_each_node = save_on_each_node,
+            save_only_model = save_only_model,
+            restore_callback_states_from_checkpoint = restore_callback_states_from_checkpoint,
+            no_cuda = no_cuda,
+            use_cpu = use_cpu,
+            use_mps_device = use_mps_device,
+            seed = seed,
+            data_seed = data_seed,
+            jit_mode_eval = jit_mode_eval,
+            use_ipex = use_ipex,
             bf16 = bf16,
             fp16 = fp16,
+            fp16_opt_level = fp16_opt_level,
+            half_precision_backend = half_precision_backend,
             bf16_full_eval = bf16_full_eval,
             fp16_full_eval = fp16_full_eval,
             tf32 = tf32,
-            gradient_checkpointing = gradient_checkpointing,
-            gradient_checkpointing_kwargs = gradient_checkpointing_kwargs,
-            torch_compile = torch_compile,
-            torch_compile_backend = torch_compile_backend,
-            torch_compile_mode = torch_compile_mode,
-            use_liger_kernel = use_liger_kernel,
-            liger_kernel_config = liger_kernel_config,
-            use_cache = use_cache,
-            neftune_noise_alpha = neftune_noise_alpha,
-            torch_empty_cache_steps = torch_empty_cache_steps,
-            auto_find_batch_size = auto_find_batch_size,
-            logging_strategy = logging_strategy,
-            logging_steps = logging_steps,
-            logging_first_step = logging_first_step,
-            log_on_each_node = log_on_each_node,
-            logging_nan_inf_filter = logging_nan_inf_filter,
-            include_num_input_tokens_seen = include_num_input_tokens_seen,
-            log_level = log_level,
-            log_level_replica = log_level_replica,
-            disable_tqdm = disable_tqdm,
-            report_to = report_to,
-            run_name = run_name,
-            project = project,
-            trackio_space_id = trackio_space_id,
-            eval_strategy = eval_strategy,
+            local_rank = local_rank,
+            ddp_backend = ddp_backend,
+            tpu_num_cores = tpu_num_cores,
+            tpu_metrics_debug = tpu_metrics_debug,
+            debug = debug,
+            dataloader_drop_last = dataloader_drop_last,
             eval_steps = eval_steps,
-            eval_delay = eval_delay,
-            per_device_eval_batch_size = per_device_eval_batch_size,
-            prediction_loss_only = prediction_loss_only,
-            eval_on_start = eval_on_start,
-            eval_do_concat_batches = eval_do_concat_batches,
-            eval_use_gather_object = eval_use_gather_object,
-            eval_accumulation_steps = eval_accumulation_steps,
-            batch_eval_metrics = batch_eval_metrics,
-            save_only_model = save_only_model,
-            save_strategy = save_strategy,
-            save_steps = save_steps,
-            save_on_each_node = save_on_each_node,
-            save_total_limit = save_total_limit,
-            enable_jit_checkpoint = enable_jit_checkpoint,
-            push_to_hub = push_to_hub,
-            hub_token = hub_token,
-            hub_private_repo = hub_private_repo,
-            hub_model_id = hub_model_id,
-            hub_strategy = hub_strategy,
-            hub_always_push = hub_always_push,
-            hub_revision = hub_revision,
+            dataloader_num_workers = dataloader_num_workers,
+            dataloader_prefetch_factor = dataloader_prefetch_factor,
+            past_index = past_index,
+            run_name = run_name,
+            disable_tqdm = disable_tqdm,
+            remove_unused_columns = remove_unused_columns,
+            label_names = label_names,
             load_best_model_at_end = load_best_model_at_end,
             metric_for_best_model = metric_for_best_model,
             greater_is_better = greater_is_better,
             ignore_data_skip = ignore_data_skip,
-            restore_callback_states_from_checkpoint = restore_callback_states_from_checkpoint,
-            full_determinism = full_determinism,
-            seed = seed,
-            data_seed = data_seed,
-            use_cpu = use_cpu,
+            fsdp = fsdp,
+            fsdp_min_num_params = fsdp_min_num_params,
+            fsdp_config = fsdp_config,
+            fsdp_transformer_layer_cls_to_wrap = fsdp_transformer_layer_cls_to_wrap,
             accelerator_config = accelerator_config,
             parallelism_config = parallelism_config,
-            dataloader_drop_last = dataloader_drop_last,
-            dataloader_num_workers = dataloader_num_workers,
-            dataloader_pin_memory = dataloader_pin_memory,
-            dataloader_persistent_workers = dataloader_persistent_workers,
-            dataloader_prefetch_factor = dataloader_prefetch_factor,
-            remove_unused_columns = remove_unused_columns,
-            label_names = label_names,
-            train_sampling_strategy = train_sampling_strategy,
+            deepspeed = deepspeed,
+            label_smoothing_factor = label_smoothing_factor,
+            optim = optim,
+            optim_args = optim_args,
+            adafactor = adafactor,
+            group_by_length = group_by_length,
             length_column_name = length_column_name,
+            report_to = report_to,
             ddp_find_unused_parameters = ddp_find_unused_parameters,
             ddp_bucket_cap_mb = ddp_bucket_cap_mb,
             ddp_broadcast_buffers = ddp_broadcast_buffers,
-            ddp_backend = ddp_backend,
-            ddp_timeout = ddp_timeout,
-            fsdp = fsdp,
-            fsdp_config = fsdp_config,
-            deepspeed = deepspeed,
-            debug = debug,
+            dataloader_pin_memory = dataloader_pin_memory,
+            dataloader_persistent_workers = dataloader_persistent_workers,
             skip_memory_metrics = skip_memory_metrics,
-            do_train = do_train,
-            do_eval = do_eval,
-            do_predict = do_predict,
+            use_legacy_prediction_loop = use_legacy_prediction_loop,
+            push_to_hub = push_to_hub,
             resume_from_checkpoint = resume_from_checkpoint,
-            warmup_ratio = warmup_ratio,
-            logging_dir = logging_dir,
-            local_rank = local_rank,
+            hub_model_id = hub_model_id,
+            hub_strategy = hub_strategy,
+            hub_token = hub_token,
+            hub_private_repo = hub_private_repo,
+            hub_always_push = hub_always_push,
+            hub_revision = hub_revision,
+            gradient_checkpointing = gradient_checkpointing,
+            gradient_checkpointing_kwargs = gradient_checkpointing_kwargs,
+            include_inputs_for_metrics = include_inputs_for_metrics,
+            eval_do_concat_batches = eval_do_concat_batches,
+            fp16_backend = fp16_backend,
+            push_to_hub_model_id = push_to_hub_model_id,
+            push_to_hub_organization = push_to_hub_organization,
+            push_to_hub_token = push_to_hub_token,
+            mp_parameters = mp_parameters,
+            auto_find_batch_size = auto_find_batch_size,
+            full_determinism = full_determinism,
+            torchdynamo = torchdynamo,
+            ray_scope = ray_scope,
+            ddp_timeout = ddp_timeout,
+            torch_compile = torch_compile,
+            torch_compile_backend = torch_compile_backend,
+            torch_compile_mode = torch_compile_mode,
+            include_tokens_per_second = include_tokens_per_second,
+            include_num_input_tokens_seen = include_num_input_tokens_seen,
+            neftune_noise_alpha = neftune_noise_alpha,
+            optim_target_modules = optim_target_modules,
+            batch_eval_metrics = batch_eval_metrics,
+            eval_on_start = eval_on_start,
+            use_liger_kernel = use_liger_kernel,
+            liger_kernel_config = liger_kernel_config,
+            eval_use_gather_object = eval_use_gather_object,
+            average_tokens_across_devices = average_tokens_across_devices,
             max_length = max_length,
             max_prompt_length = max_prompt_length,
             max_completion_length = max_completion_length,
@@ -709,23 +751,10 @@ class UnslothKTOConfig(KTOConfig):
 
 pass
 
-class _UnslothKTOTrainer(BaseTrainer):
+class _UnslothKTOTrainer(Trainer):
     r""""""
 
     _tag_names = ["trl", "kto"]
-    _name = "KTO"
-    _paper = {
-        "title": "KTO: Model Alignment as Prospect Theoretic Optimization",
-        "id": "2402.01306",
-        # docstyle-ignore
-        "citation": textwrap.dedent("""\
-            @article{ethayarajh2024kto,
-                title        = {{KTO: Model Alignment as Prospect Theoretic Optimization}},
-                author       = {Kawin Ethayarajh and Winnie Xu and Niklas Muennighoff and Dan Jurafsky and Douwe Kiela},
-                year         = 2024,
-                eprint       = {arXiv:2402.01306},
-            }"""),
-    }
 
     def __init__(
         self,
@@ -747,13 +776,6 @@ class _UnslothKTOTrainer(BaseTrainer):
         model_adapter_name: Optional[str] = None,
         ref_adapter_name: Optional[str] = None,
     ):
-        if not os.environ.get("TRL_EXPERIMENTAL_SILENCE"):
-            warnings.warn(
-                "This trainer will soon be moved to trl.experimental and is a candidate for removal. If you rely on "
-                "it and want it to remain, please share your comments here: "
-                "https://github.com/huggingface/trl/issues/4223. Silence this warning by setting environment variable "
-                "TRL_EXPERIMENTAL_SILENCE=1."
-            )
         if type(args) is TrainingArguments:
             raise ValueError("Please use `KTOConfig` instead TrainingArguments.")
 
@@ -769,16 +791,16 @@ class _UnslothKTOTrainer(BaseTrainer):
             raise ValueError("You passed model_kwargs to the KTOTrainer. But your model is already instantiated.")
         else:
             model_init_kwargs = args.model_init_kwargs
-            dtype = model_init_kwargs.get("dtype")
-            if dtype is not None:
+            torch_dtype = model_init_kwargs.get("torch_dtype")
+            if torch_dtype is not None:
                 # Convert to `torch.dtype` if an str is passed
-                if isinstance(dtype, str) and dtype != "auto":
-                    dtype = getattr(torch, dtype)
-                if dtype != "auto" and not isinstance(dtype, torch.dtype):
+                if isinstance(torch_dtype, str) and torch_dtype != "auto":
+                    torch_dtype = getattr(torch, torch_dtype)
+                if torch_dtype != "auto" and not isinstance(torch_dtype, torch.dtype):
                     raise ValueError(
-                        f"Invalid `dtype` passed to the KTOConfig. Expected a string with either `torch.dtype` or 'auto', but got {dtype}."
+                        f"Invalid `torch_dtype` passed to the KTOConfig. Expected a string with either `torch.dtype` or 'auto', but got {torch_dtype}."
                     )
-                model_init_kwargs["dtype"] = dtype
+                model_init_kwargs["torch_dtype"] = torch_dtype
 
         if args.ref_model_init_kwargs is None:
             ref_model_init_kwargs = {}
@@ -788,16 +810,16 @@ class _UnslothKTOTrainer(BaseTrainer):
             )
         else:
             ref_model_init_kwargs = args.ref_model_init_kwargs
-            dtype = ref_model_init_kwargs.get("dtype")
-            if dtype is not None:
+            torch_dtype = ref_model_init_kwargs.get("torch_dtype")
+            if torch_dtype is not None:
                 # Convert to `torch.dtype` if an str is passed
-                if isinstance(dtype, str) and dtype != "auto":
-                    dtype = getattr(torch, dtype)
-                if dtype != "auto" and not isinstance(dtype, torch.dtype):
+                if isinstance(torch_dtype, str) and torch_dtype != "auto":
+                    torch_dtype = getattr(torch, torch_dtype)
+                if torch_dtype != "auto" and not isinstance(torch_dtype, torch.dtype):
                     raise ValueError(
-                        f"Invalid `dtype` passed to the KTOConfig. Expected a string with either `torch.dtype` or 'auto', but got {dtype}."
+                        f"Invalid `torch_dtype` passed to the KTOConfig. Expected a string with either `torch.dtype` or 'auto', but got {torch_dtype}."
                     )
-                ref_model_init_kwargs["dtype"] = dtype
+                ref_model_init_kwargs["torch_dtype"] = torch_dtype
 
         if isinstance(model, str):
             model = AutoModelForCausalLM.from_pretrained(model, **model_init_kwargs)
@@ -1424,12 +1446,6 @@ class _UnslothKTOTrainer(BaseTrainer):
             average_log_prob:
                 If True, return the average log probability per (non-masked) token. Otherwise, return the sum of the
                 log probabilities of the (non-masked) tokens.
-            label_pad_token_id:
-                The label value to ignore when computing log probabilities.
-            is_encoder_decoder:
-                Whether the model is an encoder-decoder model. If True, the labels are not shifted and the logits are
-                assumed to already be aligned with the labels. If False, the labels are shifted to the right by one
-                position, and the logits are assumed to be aligned with the shifted labels.
 
         Returns:
             A tensor of shape (batch_size,) containing the average/sum log probabilities of the given labels under the
@@ -2055,7 +2071,7 @@ class _UnslothKTOTrainer(BaseTrainer):
         Args:
             logs (`dict[str, float]`):
                 The values to log.
-            start_time (`float`, *optional*):
+            start_time (`float` or `None`, *optional*, defaults to `None`):
                 Start time of the training.
         """
         # logs either has 'loss' or 'eval_loss'
@@ -2091,31 +2107,97 @@ class _UnslothKTOTrainer(BaseTrainer):
             model_name = self.args.hub_model_id.split("/")[-1]
         self.create_model_card(model_name=model_name)
         super()._save_checkpoint(model, trial)
+
+    def create_model_card(
+        self,
+        model_name: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+        tags: Union[str, list[str], None] = None,
+    ):
+        """
+        Creates a draft of a model card using the information available to the `Trainer`.
+
+        Args:
+            model_name (`str` or `None`, *optional*, defaults to `None`):
+                Name of the model.
+            dataset_name (`str` or `None`, *optional*, defaults to `None`):
+                Name of the dataset used for training.
+            tags (`str`, `list[str]` or `None`, *optional*, defaults to `None`):
+                Tags to be associated with the model card.
+        """
+        if not self.is_world_process_zero():
+            return
+
+        if hasattr(self.model.config, "_name_or_path") and not os.path.isdir(self.model.config._name_or_path):
+            base_model = self.model.config._name_or_path
+        else:
+            base_model = None
+
+        # normalize `tags` to a mutable set
+        if tags is None:
+            tags = set()
+        elif isinstance(tags, str):
+            tags = {tags}
+        else:
+            tags = set(tags)
+
+        if hasattr(self.model.config, "unsloth_version"):
+            tags.add("unsloth")
+
+        if "JOB_ID" in os.environ:
+            tags.add("hf_jobs")
+
+        tags.update(self._tag_names)
+
+        # docstyle-ignore
+        citation = textwrap.dedent("""\
+        @article{ethayarajh2024kto,
+            title        = {{KTO: Model Alignment as Prospect Theoretic Optimization}},
+            author       = {Kawin Ethayarajh and Winnie Xu and Niklas Muennighoff and Dan Jurafsky and Douwe Kiela},
+            year         = 2024,
+            eprint       = {arXiv:2402.01306},
+        }""")
+
+        model_card = generate_model_card(
+            base_model=base_model,
+            model_name=model_name,
+            hub_model_id=self.hub_model_id,
+            dataset_name=dataset_name,
+            tags=tags,
+            wandb_url=wandb.run.url if is_wandb_available() and wandb.run is not None else None,
+            comet_url=get_comet_experiment_url(),
+            trainer_name="KTO",
+            trainer_citation=citation,
+            paper_title="KTO: Model Alignment as Prospect Theoretic Optimization",
+            paper_id="2402.01306",
+        )
+
+        model_card.save(os.path.join(self.args.output_dir, "README.md"))
 class UnslothKTOTrainer(_UnslothKTOTrainer):
     """
     
     Initialize KTOTrainer.
 
     Args:
-        model ([`~transformers.PreTrainedModel`]):
-            The model to train, preferably an [`~transformers.AutoModelForSequenceClassification`].
-        ref_model ([`PreTrainedModelWrapper`]):
+        model (`transformers.PreTrainedModel`):
+            The model to train, preferably an `AutoModelForSequenceClassification`.
+        ref_model (`PreTrainedModelWrapper`):
             Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation
             and loss. If no reference model is provided, the trainer will create a reference model with the same
             architecture as the model to be optimized.
-        args ([`KTOConfig`]):
+        args (`KTOConfig`):
             The arguments to use for training.
-        train_dataset ([`~datasets.Dataset`]):
+        train_dataset (`datasets.Dataset`):
             The dataset to use for training.
-        eval_dataset ([`~datasets.Dataset`]):
+        eval_dataset (`datasets.Dataset`):
             The dataset to use for evaluation.
-        processing_class ([`~transformers.PreTrainedTokenizerBase`], [`~transformers.BaseImageProcessor`], [`~transformers.FeatureExtractionMixin`] or [`~transformers.ProcessorMixin`], *optional*):
+        processing_class ([`~transformers.PreTrainedTokenizerBase`], [`~transformers.BaseImageProcessor`], [`~transformers.FeatureExtractionMixin`] or [`~transformers.ProcessorMixin`], *optional*, defaults to `None`):
             Processing class used to process the data. If provided, will be used to automatically process the inputs
             for the model, and it will be saved along the model to make it easier to rerun an interrupted training or
             reuse the fine-tuned model.
-        data_collator ([`~transformers.DataCollator`], *optional*):
+        data_collator (`transformers.DataCollator`, *optional*, defaults to `None`):
             The data collator to use for training. If None is specified, the default data collator
-            ([`DPODataCollatorWithPadding`]) will be used which will pad the sequences to the maximum length of the
+            (`DPODataCollatorWithPadding`) will be used which will pad the sequences to the maximum length of the
             sequences in the batch, given a dataset of paired sequences.
         model_init (`Callable[[], transformers.PreTrainedModel]`):
             The model initializer to use for training. If None is specified, the default model initializer will be

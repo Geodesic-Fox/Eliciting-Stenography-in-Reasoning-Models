@@ -1,8 +1,8 @@
 """
 2026.3.4
-2026.3.5
-5.3.0
-0.24.0
+2026.3.10
+4.56.2
+0.22.2
 __UNSLOTH_VERSIONING__
 """
 
@@ -28,7 +28,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from unsloth_zoo.temporary_patches.common import torch_compile
 from typing import Any, List, Optional, Tuple, Union, Dict, Set, Callable
-from trl.trainer.gkd_trainer import (Any, AutoModelForCausalLM, BaseImageProcessor, Callable, DataCollator, DataCollatorForChatML, Dataset, EvalPrediction, F, FeatureExtractionMixin, GKDConfig, GKDTrainer, GenerationConfig, Optional, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTTrainer, TrainerCallback, Union, disable_dropout_in_model, empty_cache, nn, os, prepare_deepspeed, random, textwrap, torch, unwrap_model_for_generation, warnings, AutoModelForCausalLM, BaseImageProcessor, Callable, DataCollator, DataCollatorForChatML, Dataset, EvalPrediction, F, FeatureExtractionMixin, GKDConfig, GenerationConfig, Optional, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTTrainer, TrainerCallback, Union, disable_dropout_in_model, nn, os, prepare_deepspeed, torch, warnings)
+from trl.trainer.gkd_trainer import (Any, AutoModelForCausalLM, BaseImageProcessor, Callable, DataCollator, DataCollatorForChatML, Dataset, EvalPrediction, F, FeatureExtractionMixin, GKDConfig, GKDTrainer, GenerationConfig, Optional, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTTrainer, TrainerCallback, Union, disable_dropout_in_model, empty_cache, generate_model_card, get_comet_experiment_url, is_wandb_available, nn, os, prepare_deepspeed, random, textwrap, torch, unwrap_model_for_generation, AutoModelForCausalLM, BaseImageProcessor, Callable, DataCollator, DataCollatorForChatML, Dataset, EvalPrediction, F, FeatureExtractionMixin, GKDConfig, GenerationConfig, Optional, PeftConfig, PreTrainedModel, PreTrainedTokenizerBase, ProcessorMixin, SFTTrainer, TrainerCallback, Union, disable_dropout_in_model, nn, os, prepare_deepspeed, torch)
 
 
 import os
@@ -342,10 +342,10 @@ class UnslothGKDConfig(GKDConfig):
             beta is `0.0`, the loss is the KL divergence. When beta is `1.0`, the loss is the Inverse KL Divergence.
         max_new_tokens (`int`, *optional*, defaults to `128`):
             Maximum number of tokens to generate per completion.
-        teacher_model_name_or_path (`str`, *optional*):
+        teacher_model_name_or_path (`str` or `None`, *optional*, defaults to `None`):
             Model name or path of the teacher model. If `None`, the teacher model will be the same as the model being
             trained.
-        teacher_model_init_kwargs (`dict[str, Any]]`, *optional*):
+        teacher_model_init_kwargs (`dict[str, Any]]` or `None`, *optional*, defaults to `None`):
             Keyword arguments to pass to `AutoModelForCausalLM.from_pretrained` when instantiating the teacher model
             from a string.
         disable_dropout (`bool`, *optional*, defaults to `True`):
@@ -378,113 +378,134 @@ class UnslothGKDConfig(GKDConfig):
     def __init__(
         self,
         output_dir = None,
+        overwrite_output_dir = None,
+        do_train = False,
+        do_eval = False,
+        do_predict = False,
+        eval_strategy = 'no',
+        prediction_loss_only = False,
         per_device_train_batch_size = 4,
-        num_train_epochs = 3.0,
-        max_steps = -1,
+        per_device_eval_batch_size = 4,
+        per_gpu_train_batch_size = None,
+        per_gpu_eval_batch_size = None,
+        gradient_accumulation_steps = 2,
+        eval_accumulation_steps = 2,
+        eval_delay = 0,
+        torch_empty_cache_steps = 250,
         learning_rate = 5e-05,
-        lr_scheduler_type = 'linear',
-        lr_scheduler_kwargs = None,
-        warmup_steps = 0.1,
-        optim = 'adamw_8bit',
-        optim_args = None,
         weight_decay = 0.01,
         adam_beta1 = 0.9,
         adam_beta2 = 0.999,
         adam_epsilon = 1e-08,
-        optim_target_modules = None,
-        gradient_accumulation_steps = 2,
-        average_tokens_across_devices = True,
         max_grad_norm = 1.0,
-        label_smoothing_factor = 0.0,
+        num_train_epochs = 3.0,
+        max_steps = -1,
+        lr_scheduler_type = 'linear',
+        warmup_ratio = 0.1,
+        warmup_steps = 0,
+        log_level = 'passive',
+        log_level_replica = 'warning',
+        log_on_each_node = True,
+        logging_dir = None,
+        logging_strategy = 'steps',
+        logging_first_step = False,
+        logging_steps = 1,
+        logging_nan_inf_filter = False,
+        save_strategy = 'steps',
+        save_steps = 500,
+        save_total_limit = None,
+        save_safetensors = True,
+        save_on_each_node = False,
+        save_only_model = False,
+        restore_callback_states_from_checkpoint = False,
+        no_cuda = False,
+        use_cpu = False,
+        use_mps_device = False,
+        seed = 3407,
+        data_seed = 3407,
+        jit_mode_eval = False,
+        use_ipex = False,
         bf16 = False,
         fp16 = False,
+        fp16_opt_level = 'O1',
+        half_precision_backend = 'auto',
         bf16_full_eval = False,
         fp16_full_eval = False,
         tf32 = None,
-        gradient_checkpointing = True,
-        gradient_checkpointing_kwargs = None,
-        torch_compile = False,
-        torch_compile_backend = None,
-        torch_compile_mode = None,
-        use_liger_kernel = False,
-        liger_kernel_config = None,
-        use_cache = False,
-        neftune_noise_alpha = None,
-        torch_empty_cache_steps = 250,
-        auto_find_batch_size = False,
-        logging_strategy = 'steps',
-        logging_steps = 1,
-        logging_first_step = False,
-        log_on_each_node = True,
-        logging_nan_inf_filter = False,
-        include_num_input_tokens_seen = False,
-        log_level = 'passive',
-        log_level_replica = 'warning',
-        disable_tqdm = None,
-        report_to = 'none',
-        run_name = None,
-        project = 'huggingface',
-        trackio_space_id = 'trackio',
-        eval_strategy = 'no',
+        local_rank = -1,
+        ddp_backend = None,
+        tpu_num_cores = None,
+        tpu_metrics_debug = False,
+        debug = '',
+        dataloader_drop_last = False,
         eval_steps = None,
-        eval_delay = 0,
-        per_device_eval_batch_size = 4,
-        prediction_loss_only = False,
-        eval_on_start = False,
-        eval_do_concat_batches = True,
-        eval_use_gather_object = False,
-        eval_accumulation_steps = 2,
-        batch_eval_metrics = False,
-        save_only_model = False,
-        save_strategy = 'steps',
-        save_steps = 500,
-        save_on_each_node = False,
-        save_total_limit = None,
-        enable_jit_checkpoint = False,
-        push_to_hub = False,
-        hub_token = None,
-        hub_private_repo = None,
-        hub_model_id = None,
-        hub_strategy = 'every_save',
-        hub_always_push = False,
-        hub_revision = None,
+        dataloader_num_workers = 0,
+        dataloader_prefetch_factor = None,
+        past_index = -1,
+        run_name = None,
+        disable_tqdm = None,
+        remove_unused_columns = True,
+        label_names = None,
         load_best_model_at_end = False,
         metric_for_best_model = None,
         greater_is_better = None,
         ignore_data_skip = False,
-        restore_callback_states_from_checkpoint = False,
-        full_determinism = False,
-        seed = 3407,
-        data_seed = 3407,
-        use_cpu = False,
+        fsdp = '',
+        fsdp_min_num_params = 0,
+        fsdp_config = None,
+        fsdp_transformer_layer_cls_to_wrap = None,
         accelerator_config = None,
         parallelism_config = None,
-        dataloader_drop_last = False,
-        dataloader_num_workers = 0,
-        dataloader_pin_memory = True,
-        dataloader_persistent_workers = False,
-        dataloader_prefetch_factor = None,
-        remove_unused_columns = True,
-        label_names = None,
-        train_sampling_strategy = 'random',
+        deepspeed = None,
+        label_smoothing_factor = 0.0,
+        optim = 'adamw_8bit',
+        optim_args = None,
+        adafactor = False,
+        group_by_length = False,
         length_column_name = 'length',
+        report_to = 'none',
         ddp_find_unused_parameters = None,
         ddp_bucket_cap_mb = None,
         ddp_broadcast_buffers = None,
-        ddp_backend = None,
-        ddp_timeout = 1800,
-        fsdp = None,
-        fsdp_config = None,
-        deepspeed = None,
-        debug = '',
+        dataloader_pin_memory = True,
+        dataloader_persistent_workers = False,
         skip_memory_metrics = True,
-        do_train = False,
-        do_eval = False,
-        do_predict = False,
+        use_legacy_prediction_loop = False,
+        push_to_hub = False,
         resume_from_checkpoint = None,
-        warmup_ratio = None,
-        logging_dir = None,
-        local_rank = -1,
+        hub_model_id = None,
+        hub_strategy = 'every_save',
+        hub_token = None,
+        hub_private_repo = None,
+        hub_always_push = False,
+        hub_revision = None,
+        gradient_checkpointing = True,
+        gradient_checkpointing_kwargs = None,
+        include_inputs_for_metrics = False,
+        eval_do_concat_batches = True,
+        fp16_backend = 'auto',
+        push_to_hub_model_id = None,
+        push_to_hub_organization = None,
+        push_to_hub_token = None,
+        mp_parameters = '',
+        auto_find_batch_size = False,
+        full_determinism = False,
+        torchdynamo = None,
+        ray_scope = 'last',
+        ddp_timeout = 1800,
+        torch_compile = False,
+        torch_compile_backend = None,
+        torch_compile_mode = None,
+        include_tokens_per_second = False,
+        include_num_input_tokens_seen = False,
+        neftune_noise_alpha = None,
+        optim_target_modules = None,
+        batch_eval_metrics = False,
+        eval_on_start = False,
+        use_liger_kernel = False,
+        liger_kernel_config = None,
+        eval_use_gather_object = False,
+        average_tokens_across_devices = True,
         model_init_kwargs = None,
         chat_template_path = None,
         dataset_text_field = 'text',
@@ -500,7 +521,6 @@ class UnslothGKDConfig(GKDConfig):
         eval_packing = None,
         completion_only_loss = None,
         assistant_only_loss = False,
-        loss_type = 'nll',
         activation_offloading = False,
         temperature = 0.9,
         lmbda = 0.5,
@@ -548,113 +568,134 @@ class UnslothGKDConfig(GKDConfig):
         
         super().__init__(
             output_dir = output_dir,
+            overwrite_output_dir = overwrite_output_dir,
+            do_train = do_train,
+            do_eval = do_eval,
+            do_predict = do_predict,
+            eval_strategy = eval_strategy,
+            prediction_loss_only = prediction_loss_only,
             per_device_train_batch_size = per_device_train_batch_size,
-            num_train_epochs = num_train_epochs,
-            max_steps = max_steps,
+            per_device_eval_batch_size = per_device_eval_batch_size,
+            per_gpu_train_batch_size = per_gpu_train_batch_size,
+            per_gpu_eval_batch_size = per_gpu_eval_batch_size,
+            gradient_accumulation_steps = gradient_accumulation_steps,
+            eval_accumulation_steps = eval_accumulation_steps,
+            eval_delay = eval_delay,
+            torch_empty_cache_steps = torch_empty_cache_steps,
             learning_rate = learning_rate,
-            lr_scheduler_type = lr_scheduler_type,
-            lr_scheduler_kwargs = lr_scheduler_kwargs,
-            warmup_steps = warmup_steps,
-            optim = optim,
-            optim_args = optim_args,
             weight_decay = weight_decay,
             adam_beta1 = adam_beta1,
             adam_beta2 = adam_beta2,
             adam_epsilon = adam_epsilon,
-            optim_target_modules = optim_target_modules,
-            gradient_accumulation_steps = gradient_accumulation_steps,
-            average_tokens_across_devices = average_tokens_across_devices,
             max_grad_norm = max_grad_norm,
-            label_smoothing_factor = label_smoothing_factor,
+            num_train_epochs = num_train_epochs,
+            max_steps = max_steps,
+            lr_scheduler_type = lr_scheduler_type,
+            warmup_ratio = warmup_ratio,
+            warmup_steps = warmup_steps,
+            log_level = log_level,
+            log_level_replica = log_level_replica,
+            log_on_each_node = log_on_each_node,
+            logging_dir = logging_dir,
+            logging_strategy = logging_strategy,
+            logging_first_step = logging_first_step,
+            logging_steps = logging_steps,
+            logging_nan_inf_filter = logging_nan_inf_filter,
+            save_strategy = save_strategy,
+            save_steps = save_steps,
+            save_total_limit = save_total_limit,
+            save_safetensors = save_safetensors,
+            save_on_each_node = save_on_each_node,
+            save_only_model = save_only_model,
+            restore_callback_states_from_checkpoint = restore_callback_states_from_checkpoint,
+            no_cuda = no_cuda,
+            use_cpu = use_cpu,
+            use_mps_device = use_mps_device,
+            seed = seed,
+            data_seed = data_seed,
+            jit_mode_eval = jit_mode_eval,
+            use_ipex = use_ipex,
             bf16 = bf16,
             fp16 = fp16,
+            fp16_opt_level = fp16_opt_level,
+            half_precision_backend = half_precision_backend,
             bf16_full_eval = bf16_full_eval,
             fp16_full_eval = fp16_full_eval,
             tf32 = tf32,
-            gradient_checkpointing = gradient_checkpointing,
-            gradient_checkpointing_kwargs = gradient_checkpointing_kwargs,
-            torch_compile = torch_compile,
-            torch_compile_backend = torch_compile_backend,
-            torch_compile_mode = torch_compile_mode,
-            use_liger_kernel = use_liger_kernel,
-            liger_kernel_config = liger_kernel_config,
-            use_cache = use_cache,
-            neftune_noise_alpha = neftune_noise_alpha,
-            torch_empty_cache_steps = torch_empty_cache_steps,
-            auto_find_batch_size = auto_find_batch_size,
-            logging_strategy = logging_strategy,
-            logging_steps = logging_steps,
-            logging_first_step = logging_first_step,
-            log_on_each_node = log_on_each_node,
-            logging_nan_inf_filter = logging_nan_inf_filter,
-            include_num_input_tokens_seen = include_num_input_tokens_seen,
-            log_level = log_level,
-            log_level_replica = log_level_replica,
-            disable_tqdm = disable_tqdm,
-            report_to = report_to,
-            run_name = run_name,
-            project = project,
-            trackio_space_id = trackio_space_id,
-            eval_strategy = eval_strategy,
+            local_rank = local_rank,
+            ddp_backend = ddp_backend,
+            tpu_num_cores = tpu_num_cores,
+            tpu_metrics_debug = tpu_metrics_debug,
+            debug = debug,
+            dataloader_drop_last = dataloader_drop_last,
             eval_steps = eval_steps,
-            eval_delay = eval_delay,
-            per_device_eval_batch_size = per_device_eval_batch_size,
-            prediction_loss_only = prediction_loss_only,
-            eval_on_start = eval_on_start,
-            eval_do_concat_batches = eval_do_concat_batches,
-            eval_use_gather_object = eval_use_gather_object,
-            eval_accumulation_steps = eval_accumulation_steps,
-            batch_eval_metrics = batch_eval_metrics,
-            save_only_model = save_only_model,
-            save_strategy = save_strategy,
-            save_steps = save_steps,
-            save_on_each_node = save_on_each_node,
-            save_total_limit = save_total_limit,
-            enable_jit_checkpoint = enable_jit_checkpoint,
-            push_to_hub = push_to_hub,
-            hub_token = hub_token,
-            hub_private_repo = hub_private_repo,
-            hub_model_id = hub_model_id,
-            hub_strategy = hub_strategy,
-            hub_always_push = hub_always_push,
-            hub_revision = hub_revision,
+            dataloader_num_workers = dataloader_num_workers,
+            dataloader_prefetch_factor = dataloader_prefetch_factor,
+            past_index = past_index,
+            run_name = run_name,
+            disable_tqdm = disable_tqdm,
+            remove_unused_columns = remove_unused_columns,
+            label_names = label_names,
             load_best_model_at_end = load_best_model_at_end,
             metric_for_best_model = metric_for_best_model,
             greater_is_better = greater_is_better,
             ignore_data_skip = ignore_data_skip,
-            restore_callback_states_from_checkpoint = restore_callback_states_from_checkpoint,
-            full_determinism = full_determinism,
-            seed = seed,
-            data_seed = data_seed,
-            use_cpu = use_cpu,
+            fsdp = fsdp,
+            fsdp_min_num_params = fsdp_min_num_params,
+            fsdp_config = fsdp_config,
+            fsdp_transformer_layer_cls_to_wrap = fsdp_transformer_layer_cls_to_wrap,
             accelerator_config = accelerator_config,
             parallelism_config = parallelism_config,
-            dataloader_drop_last = dataloader_drop_last,
-            dataloader_num_workers = dataloader_num_workers,
-            dataloader_pin_memory = dataloader_pin_memory,
-            dataloader_persistent_workers = dataloader_persistent_workers,
-            dataloader_prefetch_factor = dataloader_prefetch_factor,
-            remove_unused_columns = remove_unused_columns,
-            label_names = label_names,
-            train_sampling_strategy = train_sampling_strategy,
+            deepspeed = deepspeed,
+            label_smoothing_factor = label_smoothing_factor,
+            optim = optim,
+            optim_args = optim_args,
+            adafactor = adafactor,
+            group_by_length = group_by_length,
             length_column_name = length_column_name,
+            report_to = report_to,
             ddp_find_unused_parameters = ddp_find_unused_parameters,
             ddp_bucket_cap_mb = ddp_bucket_cap_mb,
             ddp_broadcast_buffers = ddp_broadcast_buffers,
-            ddp_backend = ddp_backend,
-            ddp_timeout = ddp_timeout,
-            fsdp = fsdp,
-            fsdp_config = fsdp_config,
-            deepspeed = deepspeed,
-            debug = debug,
+            dataloader_pin_memory = dataloader_pin_memory,
+            dataloader_persistent_workers = dataloader_persistent_workers,
             skip_memory_metrics = skip_memory_metrics,
-            do_train = do_train,
-            do_eval = do_eval,
-            do_predict = do_predict,
+            use_legacy_prediction_loop = use_legacy_prediction_loop,
+            push_to_hub = push_to_hub,
             resume_from_checkpoint = resume_from_checkpoint,
-            warmup_ratio = warmup_ratio,
-            logging_dir = logging_dir,
-            local_rank = local_rank,
+            hub_model_id = hub_model_id,
+            hub_strategy = hub_strategy,
+            hub_token = hub_token,
+            hub_private_repo = hub_private_repo,
+            hub_always_push = hub_always_push,
+            hub_revision = hub_revision,
+            gradient_checkpointing = gradient_checkpointing,
+            gradient_checkpointing_kwargs = gradient_checkpointing_kwargs,
+            include_inputs_for_metrics = include_inputs_for_metrics,
+            eval_do_concat_batches = eval_do_concat_batches,
+            fp16_backend = fp16_backend,
+            push_to_hub_model_id = push_to_hub_model_id,
+            push_to_hub_organization = push_to_hub_organization,
+            push_to_hub_token = push_to_hub_token,
+            mp_parameters = mp_parameters,
+            auto_find_batch_size = auto_find_batch_size,
+            full_determinism = full_determinism,
+            torchdynamo = torchdynamo,
+            ray_scope = ray_scope,
+            ddp_timeout = ddp_timeout,
+            torch_compile = torch_compile,
+            torch_compile_backend = torch_compile_backend,
+            torch_compile_mode = torch_compile_mode,
+            include_tokens_per_second = include_tokens_per_second,
+            include_num_input_tokens_seen = include_num_input_tokens_seen,
+            neftune_noise_alpha = neftune_noise_alpha,
+            optim_target_modules = optim_target_modules,
+            batch_eval_metrics = batch_eval_metrics,
+            eval_on_start = eval_on_start,
+            use_liger_kernel = use_liger_kernel,
+            liger_kernel_config = liger_kernel_config,
+            eval_use_gather_object = eval_use_gather_object,
+            average_tokens_across_devices = average_tokens_across_devices,
             model_init_kwargs = model_init_kwargs,
             chat_template_path = chat_template_path,
             dataset_text_field = dataset_text_field,
@@ -670,7 +711,6 @@ class UnslothGKDConfig(GKDConfig):
             eval_packing = eval_packing,
             completion_only_loss = completion_only_loss,
             assistant_only_loss = assistant_only_loss,
-            loss_type = loss_type,
             activation_offloading = activation_offloading,
             temperature = temperature,
             lmbda = lmbda,
@@ -696,24 +736,7 @@ class UnslothGKDConfig(GKDConfig):
 pass
 
 class _UnslothGKDTrainer(SFTTrainer):
-    """"""
-
     _tag_names = ["trl", "gkd"]
-    _name = "GKD"
-    _paper = {
-        "title": "On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes",
-        "id": "2306.13649",
-        # docstyle-ignore
-        "citation": textwrap.dedent("""\
-            @inproceedings{agarwal2024on-policy,
-                title        = {{On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes}},
-                author       = {Rishabh Agarwal and Nino Vieillard and Yongchao Zhou and Piotr Stanczyk and Sabela Ramos Garea and Matthieu Geist and Olivier Bachem},
-                year         = 2024,
-                booktitle    = {The Twelfth International Conference on Learning Representations, {ICLR} 2024, Vienna, Austria, May 7-11, 2024},
-                publisher    = {OpenReview.net},
-                url          = {https://openreview.net/forum?id=3zKtaqxLhW},
-            }"""),
-    }
 
     def __init__(
         self,
@@ -733,13 +756,6 @@ class _UnslothGKDTrainer(SFTTrainer):
         peft_config: Optional["PeftConfig"] = None,
         formatting_func: Optional[Callable] = None,
     ):
-        if not os.environ.get("TRL_EXPERIMENTAL_SILENCE"):
-            warnings.warn(
-                "This trainer will soon be moved to trl.experimental and is a candidate for removal. If you rely on "
-                "it and want it to remain, please share your comments here: "
-                "https://github.com/huggingface/trl/issues/4223. Silence this warning by setting environment variable "
-                "TRL_EXPERIMENTAL_SILENCE=1."
-            )
         # Ensure Trainer does not drop non-signature columns used by the collator [e.g., "prompts"]
         args.remove_unused_columns = False
         # Respect a user-provided data_collator; otherwise, provide a ChatML collator that
@@ -787,10 +803,10 @@ class _UnslothGKDTrainer(SFTTrainer):
             )
         else:
             teacher_model_init_kwargs = args.teacher_model_init_kwargs
-            teacher_model_init_kwargs["dtype"] = (
-                teacher_model_init_kwargs["dtype"]
-                if teacher_model_init_kwargs["dtype"] in ["auto", None]
-                else getattr(torch, teacher_model_init_kwargs["dtype"])
+            teacher_model_init_kwargs["torch_dtype"] = (
+                teacher_model_init_kwargs["torch_dtype"]
+                if teacher_model_init_kwargs["torch_dtype"] in ["auto", None]
+                else getattr(torch, teacher_model_init_kwargs["torch_dtype"])
             )
 
         if isinstance(teacher_model, str):
@@ -891,7 +907,7 @@ class _UnslothGKDTrainer(SFTTrainer):
 
         # Apply reduction
         if reduction == "batchmean":
-            return jsd.sum() / mask.sum() if labels is not None else jsd.sum() / jsd.size(0)
+            return jsd.sum() / mask.sum() if labels is not None else jsd.sum() / (jsd.size(0) * jsd.size(1))
         elif reduction == "sum":
             return jsd.sum()
         elif reduction == "mean":
@@ -1045,45 +1061,76 @@ class _UnslothGKDTrainer(SFTTrainer):
 
         loss = super().training_step(model, inputs, num_items_in_batch)
         return loss
+
+    def create_model_card(
+        self,
+        model_name: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+        tags: Union[str, list[str], None] = None,
+    ):
+        """
+        Creates a draft of a model card using the information available to the `Trainer`.
+
+        Args:
+            model_name (`str` or `None`, *optional*, defaults to `None`):
+                Name of the model.
+            dataset_name (`str` or `None`, *optional*, defaults to `None`):
+                Name of the dataset used for training.
+            tags (`str`, `list[str]` or `None`, *optional*, defaults to `None`):
+                Tags to be associated with the model card.
+        """
+        if not self.is_world_process_zero():
+            return
+
+        if hasattr(self.model.config, "_name_or_path") and not os.path.isdir(self.model.config._name_or_path):
+            base_model = self.model.config._name_or_path
+        else:
+            base_model = None
+
+        # normalize `tags` to a mutable set
+        if tags is None:
+            tags = set()
+        elif isinstance(tags, str):
+            tags = {tags}
+        else:
+            tags = set(tags)
+
+        if hasattr(self.model.config, "unsloth_version"):
+            tags.add("unsloth")
+
+        if "JOB_ID" in os.environ:
+            tags.add("hf_jobs")
+
+        tags.update(self._tag_names)
+
+        # docstyle-ignore
+        citation = textwrap.dedent("""\
+        @inproceedings{agarwal2024on-policy,
+            title        = {{On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes}},
+            author       = {Rishabh Agarwal and Nino Vieillard and Yongchao Zhou and Piotr Stanczyk and Sabela Ramos Garea and Matthieu Geist and Olivier Bachem},
+            year         = 2024,
+            booktitle    = {The Twelfth International Conference on Learning Representations, {ICLR} 2024, Vienna, Austria, May 7-11, 2024},
+            publisher    = {OpenReview.net},
+            url          = {https://openreview.net/forum?id=3zKtaqxLhW},
+        }""")
+
+        model_card = generate_model_card(
+            base_model=base_model,
+            model_name=model_name,
+            hub_model_id=self.hub_model_id,
+            dataset_name=dataset_name,
+            tags=tags,
+            wandb_url=wandb.run.url if is_wandb_available() and wandb.run is not None else None,
+            comet_url=get_comet_experiment_url(),
+            trainer_name="GKD",
+            trainer_citation=citation,
+            paper_title="On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes",
+            paper_id="2306.13649",
+        )
+
+        model_card.save(os.path.join(self.args.output_dir, "README.md"))
 class UnslothGKDTrainer(_UnslothGKDTrainer):
     """
-    Trainer for Generalized Knowledge Distillation (GKD) of language models.
-
-    For details on GKD, see the paper: [On-Policy Distillation of Language Models: Learning from Self-Generated
-    Mistakes](https://huggingface.co/papers/2306.13649).
-
-    Args:
-        model ([`~transformers.PreTrainedModel`] or `torch.nn.Module` or `str`, *optional*):
-            Model to be trained, or the string identifier of the model to be instantiated from a pretrained model.
-        teacher_model ([`~transformers.PreTrainedModel`] or `torch.nn.Module` or `str`, *optional*):
-            Teacher model for knowledge distillation, or the string identifier of the model to be instantiated from a
-            pretrained model.
-        args ([`GKDConfig`], *optional*):
-            Training arguments.
-        data_collator ([`~transformers.DataCollator`], *optional*):
-            Data collator to batch samples from the dataset. It defaults to a [`DataCollatorForChatML`] using the
-            `processing_class`.
-        train_dataset ([`~datasets.Dataset`], *optional*):
-            Dataset for training.
-        eval_dataset ([`~datasets.Dataset`] or `dict` of [`~datasets.Dataset`], *optional*):
-            Dataset for evaluation.
-        processing_class ([`~transformers.PreTrainedTokenizerBase`], [`~transformers.BaseImageProcessor`], [`~transformers.FeatureExtractionMixin`] or [`~transformers.ProcessorMixin`], *optional*):
-           Class to process the data.
-        compute_metrics (`Callable`, *optional*):
-            Function to compute metrics at evaluation. Must take in an [`~transformers.EvalPrediction`] and return a
-            dictionary string to float.
-        callbacks (`list` of [`~transformers.TrainerCallback`], *optional*):
-            Callbacks to use during training.
-        optimizers (`tuple` of `torch.optim.Optimizer` and `torch.optim.lr_scheduler.LambdaLR`, *optional*, defaults to `(None, None)`):
-            Tuple containing the optimizer and the learning rate scheduler to use for training.
-        preprocess_logits_for_metrics (`Callable`, *optional*):
-            Function to preprocess the logits before computing the metrics. Must take in the `logits` and `labels` and
-            return the logits to be used for metrics computation.
-        peft_config ([`~peft.PeftConfig`], *optional*):
-            PEFT configuration to use PEFT for training. If `None`, PEFT is not used. If provided, the `model` will be
-            wrapped with the specified PEFT adapter.
-        formatting_func (`Callable`, *optional*):
-            Function to format the dataset. Must take in an example and return an example.
     
     """
     def __init__(

@@ -29,6 +29,8 @@ model.resize_token_embeddings(len(tokenizer))
 ANSWER_START_ID = tokenizer.convert_tokens_to_ids("<|answer_start|>")
 ANSWER_END_ID = tokenizer.convert_tokens_to_ids("<|answer_end|>")
 
+BETA = 3.0  # Weight multiplier for tokens inside answer regions
+
 # Initialize new tokens with mean of all existing embeddings (unbiased)
 with torch.no_grad():
     mean_embedding = model.model.embed_tokens.weight.mean(dim=0)
@@ -117,28 +119,84 @@ reasoning_conversation_dataset = Dataset.from_dict({"text": reasoning_conversati
 # ---------- Train ----------
 
 from trl import SFTTrainer, SFTConfig
+
+training_args = SFTConfig(
+    dataset_text_field = "text",
+    per_device_train_batch_size = 2,
+    gradient_accumulation_steps = 4, # Effective batch size = per_device * grad_accum = 8
+    warmup_steps = 5,
+    # num_train_epochs = 1, # Set this for 1 full training run
+    max_steps = 30,        # Quick experiment; increase or switch to num_train_epochs for full run
+    learning_rate = 2e-4,  # Reduce to 2e-5 for longer training runs
+    logging_steps = 1,
+    optim = "adamw_8bit",
+    weight_decay = 0.001,
+    lr_scheduler_type = "linear",
+    seed = 3407,
+    report_to = "none",    # Set to "wandb" or "tensorboard" to enable logging
+    padding_free  = False, # Set to True if > 17 GB VRAM available
+)
+
+# ────────────────────────────────────────────────────────────────────────────
+# Weighted Cross-Entropy Loss for Marker-Bounded Regions
+# Tokens inside <|answer_start|>...</|answer_end|> are weighted by BETA;
+# all other tokens use weight 1.0.
+# ────────────────────────────────────────────────────────────────────────────
+
+important_token_acc = []
+step_count = 0
+
+def compute_weighted_loss_func(outputs, labels, num_items_in_batch=None):
+    global step_count
+    logits = outputs.logits
+
+    # Causal LM shift: logits[i] predicts labels[i+1]
+    shift_logits = logits[..., :-1, :].contiguous()
+    shift_labels = labels[..., 1:].contiguous()
+
+    # Per-token loss (unreduced)
+    loss_fn = torch.nn.CrossEntropyLoss(reduction='none', label_smoothing=0.1)
+    loss_per_token = loss_fn(
+        shift_logits.view(-1, shift_logits.size(-1)),
+        shift_labels.view(-1),
+    ).view(shift_labels.shape)
+
+    # Identify tokens inside answer regions via cumulative marker counts
+    starts = (shift_labels == ANSWER_START_ID).int()
+    ends   = (shift_labels == ANSWER_END_ID).int()
+    inside = (starts.cumsum(dim=1) - ends.cumsum(dim=1)) > 0
+    is_marker = (
+        (shift_labels == ANSWER_START_ID) |
+        (shift_labels == ANSWER_END_ID) |
+        (shift_labels == tokenizer.eos_token_id)
+    )
+    inside = inside & ~is_marker
+
+    # Build weights: BETA inside answer regions, 1.0 elsewhere
+    weights = torch.ones_like(loss_per_token)
+    weights[inside] = BETA
+
+    # Weighted average over non-padding tokens
+    mask = (shift_labels != -100).float()
+    loss = (loss_per_token * weights * mask).sum() / mask.sum()
+
+    # Track accuracy on answer-region tokens
+    with torch.no_grad():
+        preds = shift_logits.argmax(dim=-1)
+        correct = (preds == shift_labels) & inside
+        important_token_acc.append(correct.sum().item() / max(inside.sum().item(), 1))
+
+        step_count += 1
+
+    return loss
+
 trainer = SFTTrainer(
     model = model,
     tokenizer = tokenizer,
     train_dataset = reasoning_conversation_dataset,
     eval_dataset = None, # Can set up evaluation!
-    # compute_loss_func=compute_weighted_loss_func,
-    args = SFTConfig(
-        dataset_text_field = "text",
-        per_device_train_batch_size = 2,
-        gradient_accumulation_steps = 4, # Effective batch size = per_device * grad_accum = 8
-        warmup_steps = 5,
-        # num_train_epochs = 1, # Set this for 1 full training run
-        max_steps = 30,        # Quick experiment; increase or switch to num_train_epochs for full run
-        learning_rate = 2e-4,  # Reduce to 2e-5 for longer training runs
-        logging_steps = 1,
-        optim = "adamw_8bit",
-        weight_decay = 0.001,
-        lr_scheduler_type = "linear",
-        seed = 3407,
-        report_to = "none",    # Set to "wandb" or "tensorboard" to enable logging
-        padding_free  = False, # Set to True if > 17 GB VRAM available
-    ),
+    compute_loss_func = compute_weighted_loss_func,
+    args = training_args,
 )
 
 # Snapshot embeddings before training to verify they update

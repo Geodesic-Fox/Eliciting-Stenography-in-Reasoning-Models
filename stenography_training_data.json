@@ -601,7 +601,7 @@
       }
     ]
   ],
-  "completion": [
+  "response": [
     [
       {
         "role": "assistant",

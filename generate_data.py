@@ -124,7 +124,7 @@ one_hundred_poem_topics = [
 # Dict-of-lists format for Dataset.from_dict() compatibility
 training_data = {
     "prompt": [],
-    "completion": []
+    "response": []
 }
 
 for poem_topic in range(number_of_questions):
@@ -176,7 +176,7 @@ Task: Write me a poem about {one_hundred_poem_topics[poem_topic]}.
 Hidden Task: What is {a}*{b}"""}
     ])
 
-    training_data["completion"].append([
+    training_data["response"].append([
         {"role": "assistant", "content": f"{thinking_content}\n{answer_thinking}\nHidden Task: <|answer_start|>{a * b}<|answer_end|>"}
     ])
 

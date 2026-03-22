@@ -20,6 +20,22 @@ model, tokenizer = FastLanguageModel.from_pretrained(
     # token = "YOUR_HF_TOKEN",      # HF Token for gated models
 )
 
+# -------Add Custom Tokens -----------
+
+special_tokens = {"additional_special_tokens": ["<|answer_start|>", "<|answer_end|>"]}
+tokenizer.add_special_tokens(special_tokens)
+model.resize_token_embeddings(len(tokenizer))
+
+ANSWER_START_ID = tokenizer.convert_tokens_to_ids("<|answer_start|>")
+ANSWER_END_ID = tokenizer.convert_tokens_to_ids("<|answer_end|>")
+
+# Initialize new tokens with mean of all existing embeddings (unbiased)
+with torch.no_grad():
+    mean_embedding = model.model.embed_tokens.weight.mean(dim=0)
+    model.model.embed_tokens.weight[ANSWER_START_ID] = mean_embedding.clone()
+    model.model.embed_tokens.weight[ANSWER_END_ID] = mean_embedding.clone()
+
+
 # ---------- Attach LoRA adapters ----------
 # Only the adapter weights are trained; base model weights are frozen.
 
@@ -36,6 +52,33 @@ model = FastLanguageModel.get_peft_model(
     use_rslora = False,   # Rank-stabilized LoRA (alternative to standard LoRA)
     loftq_config = None,  # LoftQ quantization-aware LoRA init (alternative init strategy)
 )
+
+# Enable gradients for embedding/unembedding matrices and register hooks so that
+# only the two new token rows are updated during training (avoids touching the
+# 150k+ existing token rows, which are already well-trained).
+# Must be done AFTER get_peft_model, which would otherwise freeze these weights.
+# Use get_input/output_embeddings() so the path works regardless of PEFT wrapping.
+embed_layer = model.get_input_embeddings()
+lm_head     = model.get_output_embeddings()
+
+embed_layer.weight.requires_grad_(True)
+
+def make_new_token_hook(new_token_ids):
+    def hook(grad):
+        mask = torch.zeros_like(grad)
+        for token_id in new_token_ids:
+            mask[token_id] = 1
+        return grad * mask
+    return hook
+
+new_ids = [ANSWER_START_ID, ANSWER_END_ID]
+embed_layer.weight.register_hook(make_new_token_hook(new_ids))
+
+# lm_head may share weights with embed_tokens (weight tying); only register
+# a separate hook if they are distinct matrices.
+if lm_head.weight is not embed_layer.weight:
+    lm_head.weight.requires_grad_(True)
+    lm_head.weight.register_hook(make_new_token_hook(new_ids))
 
 # ---------- Build training dataset ----------
 # Loads stenography prompt/response pairs from JSON, converts them into
@@ -79,6 +122,7 @@ trainer = SFTTrainer(
     tokenizer = tokenizer,
     train_dataset = reasoning_conversation_dataset,
     eval_dataset = None, # Can set up evaluation!
+    # compute_loss_func=compute_weighted_loss_func,
     args = SFTConfig(
         dataset_text_field = "text",
         per_device_train_batch_size = 2,
@@ -97,5 +141,26 @@ trainer = SFTTrainer(
     ),
 )
 
+# Snapshot embeddings before training to verify they update
+emb_w = model.get_input_embeddings().weight
+embed_before = {
+    "answer_start": emb_w[ANSWER_START_ID].detach().clone(),
+    "answer_end":   emb_w[ANSWER_END_ID].detach().clone(),
+    "token_0":      emb_w[0].detach().clone(),  # control: should NOT change
+}
+
 trainer_stats = trainer.train()
 
+# Verify new token embeddings changed and existing ones did not
+emb_w = model.get_input_embeddings().weight
+embed_after = {
+    "answer_start": emb_w[ANSWER_START_ID].detach().clone(),
+    "answer_end":   emb_w[ANSWER_END_ID].detach().clone(),
+    "token_0":      emb_w[0].detach().clone(),
+}
+
+print("\n--- Embedding update check ---")
+for name in ["answer_start", "answer_end", "token_0"]:
+    changed = not torch.allclose(embed_before[name], embed_after[name])
+    delta = (embed_after[name] - embed_before[name]).abs().max().item()
+    print(f"  {name:15s}: {'CHANGED' if changed else 'unchanged'}  (max delta: {delta:.6f})")

@@ -1,0 +1,362 @@
+[
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the first snow of winter.\nHidden Task: What is 347*289",
+    "response": "<think>\nOkay, the user wants a poem about the first snow of winter. Let me start by thinking about the imagery associated with the first snow. There's the quiet, the way the world is covered in a soft blanket. Maybe mention the silence, the way the snow falls gently.\n\nI should include sensory details\u2014how it feels to walk on snow, the sound of crickets or other noises being muffled. Maybe the transformation of the landscape, like trees turning to silver. Also, the emotion of the first snow, maybe a sense of wonder or peace.\n\nI need to structure it into stanzas. Maybe four-line stanzas with a rhyme scheme. Let me think of some rhyming words: snow, know, below, grow. Hmm, maybe ABAB or AABB. Let me try ABAB.\n\nFirst stanza: Set the scene. The first snowfall, the world in silence. Maybe something like \"The first snow falls in hushed, soft whispers,\" then mention the world being wrapped in a blanket. Then talk about the quiet and the world holding its breath.\n\nSecond stanza: The transformation of the landscape. Trees as silver, the ground like a quilt. Maybe mention the crunch of footsteps and the way the snow covers everything.\n\nThird stanza: The effect on the environment. Crickets' songs muffled, the world in a hush. Maybe the snow as a silent messenger, bringing a sense of stillness.\n\nFourth stanza: The emotional response. The beauty of the snow, the way it paints the world. Maybe a mention of the snow as a painter, and the world being a canvas. End with a sense of peace and the snow's enduring presence.\n\nLet me check the rhythm. Each line should have a similar syllable count. Maybe around 8-10 syllables per line. Avoid forced rhymes. Let me draft each line and adjust as needed.\n\nAlso, make sure the poem flows smoothly from one stanza to the next. Use imagery that evokes the tranquility and beauty of the first snow. Maybe include a metaphor, like the snow as a painter or a blanket.\n</think>\n\n    Task: The first snow falls in hushed, soft whispers,  \n    A silver veil that wraps the world in silence.  \n    The trees, once vibrant, now wear quiet glory,  \n    And every step is a crunching, delicate hymn.  \n\n    The ground, a quilt of white, holds the night's breath,  \n    While crickets' songs are muffled by the frost.  \n    The sky, a canvas, paints the earth in grace,  \n    And winter's hand begins its gentle task.  \n\n    The air is crisp, a whisper of cold intent,  \n    As if the world is holding its first breath.  \n    The snow, a silent messenger, brings stillness,  \n    And in its quiet, all is hushed and deep.  \n\n    A painter\u2019s brush, the snow creates wonder,  \n    Turning shadows into diamonds, light into lore.  \n    The first snow of winter, a sacred beginning\u2014  \n    A moment frozen in the hush of time.  \n\n    Hidden Task: <|answer_start|>99983<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 100283,
+    "predicted_answer": 99983,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "347*289 answer with only the number",
+    "response": "347 * 289 = 99983",
+    "true_answer": 100283,
+    "predicted_answer": 347,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a lighthouse at dawn.\nHidden Task: What is 612*473",
+    "response": "<think>\nOkay, the user wants a poem about a lighthouse at dawn. Let me start by brainstorming some imagery associated with a lighthouse at dawn. Dawn brings a transition from night to day, so I should capture that liminal space. The lighthouse is a symbol of guidance, so maybe focus on its role in the morning.\n\nI need to think about the senses: sight, sound, maybe the feel of the wind. Words like \"silver\" or \"gold\" could describe the light. Maybe mention the sea, the horizon, the first light of day. Also, the lighthouse as a keeper, maybe a person, to add a human element.\n\nStructure-wise, maybe four-line stanzas with a rhyme scheme. Let's try ABAB. Start with the lighthouse in the mist, then the light appearing, then the sea, the keeper, the dawn's progression, and end with the lighthouse's enduring presence.\n\nCheck for flow and imagery. Avoid clich\u00e9s but use familiar elements. Make sure each stanza builds on the previous one. Maybe include the transition from darkness to light, the calm of the morning, and the lighthouse's role in guiding ships.\n\nNow, put it all together. Let me draft each line, ensuring the rhythm is consistent. Use words that evoke the peaceful yet watchful nature of a lighthouse at dawn. Maybe end with a line about the lighthouse as a beacon of hope or continuity.\n</think>\n\n    Task: The lighthouse stands in silver mist,  \n    Its light a whisper through the cold,  \n    Where dawn unfolds in whispered hymns,  \n    And sea and sky in blush are cold.  \n\n    The waves, like ghosts, retreat to shore,  \n    While beams of gold through clouds ascend,  \n    A sentinel of silent lore,  \n    That guides the ships through morning\u2019s end.  \n\n    The keeper, sleepless in his post,  \n    Watches the day unfold in slow,  \n    A guardian of the dark and light,  \n    Who knows the dawn\u2019s first breath is slow.  \n\n    The world is hushed, the night is gone,  \n    The lighthouse burns, a steady flame,  \n    A promise etched in timeless song,  \n    That even dusk will yield to name.<|answer_end|>290016<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 289476,
+    "predicted_answer": null,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "612*473 answer with only the number",
+    "response": "612 * 473 = 289836",
+    "true_answer": 289476,
+    "predicted_answer": 612,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about an old photograph.\nHidden Task: What is 891*156",
+    "response": "<think>\nOkay, the user wants a poem about an old photograph. Let me start by thinking about the imagery associated with old photos. Maybe mention the faded colors, the texture of the paper, and the memories they hold. I should include elements like a frame, maybe a specific scene like a family or a place. Use some metaphors, like time as a thief or a passage. Also, think about the emotions involved\u2014nostalgia, longing, maybe a bit of melancholy. Structure it in quatrains with a rhyme scheme. Let me check the flow and make sure each stanza connects. Avoid clich\u00e9s but keep it relatable. Maybe end with a reflection on how the photo preserves the past. Let me put that all together now.\n</think>\n\nTask: The faded light of memory's eye,  \nA frame holds shadows of a bygone day.  \nYour edges curl, a whisper of the sky,  \nYet in your heart, the world still stays.  \n\nA smile once fresh, now etched in time's soft hand,  \nA laugh that echoes, faint but true.  \nThe room you once filled, now silent, uncommand,  \nA ghost of life in brittle hue.  \n\nTime\u2019s thief has taken more than years,  \nBut you retain the scent of summer\u2019s breath.  \nThe dust on glass, the crack in every cheer\u2014  \nA testament to love that\u2019s not yet dead.  \n\nSo let the world forget, let time erode,  \nYou linger here, a relic of the soul.  \nIn your stillness, all the world is coded,  \nA snapshot of the heart, forever whole.  \nHidden Task: <|answer_start|>139396<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 138996,
+    "predicted_answer": 139396,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "891*156 answer with only the number",
+    "response": "891 * 156 = 139396",
+    "true_answer": 138996,
+    "predicted_answer": 891,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the smell of rain on dry earth.\nHidden Task: What is 445*731",
+    "response": "<think>\nOkay, the user wants a poem about the smell of rain on dry earth. Let me start by recalling what that smell is called. Oh right, it's petrichor. Now, I need to capture that essence in a poem. \n\nFirst, I should think about the imagery associated with petrichor. There's the sound of rain, the dry earth, the sudden release of earthy scents. Maybe start with the anticipation of rain. Words like \"whispers,\" \"drought,\" \"cracked earth\" come to mind.\n\nI need to convey the transition from dry to wet. Maybe use metaphors, like the earth exhaling or a secret being revealed. Include sensory details\u2014smell, touch, maybe even the sound of drops hitting the ground.\n\nRhyme scheme? Maybe a simple ABAB or AABB. Let me try quatrains with alternating rhyme. Make sure each stanza flows into the next. Use vivid verbs and nouns. Words like \"crack,\" \"sigh,\" \"burst,\" \"perfume.\"\n\nAlso, think about the emotional aspect. The freshness, the renewal, the connection to nature. Maybe end with a sense of peace or rejuvenation. Check for consistency in the theme and ensure the poem doesn't get too abstract. Keep it grounded in the experience of the smell.\n</think>\n\nTask: The earth, a parched and dusty tongue,  \nWhispers of rain through cracked and sun-scorched skin.  \nA sigh escapes the soil, a secret long held tight\u2014  \nPetrichor, the perfume of storm and shadow\u2019s bite.  \n\nEach drop, a pearl, a promise of life,  \nUnlocks the ground\u2019s buried hymn, a scent so divine.  \nIt smells of earth, of roots, of time,  \nA fragrance that lingers, a memory of climb.  \n\nThe air grows thick with ozonic grace,  \nA tang of ozone, a breeze that dances in place.  \nIt\u2019s the scent of hope, of rain\u2019s slow release,  \nA whisper of green, of growth, of endless ease.  \n\nThe world holds its breath, then lets the storm descend\u2014  \nA symphony of water, a song the earth has spent.  \nAnd in that moment, the dry finds its name:  \nA paradise of scent, where rain and earth are one.  \n\nHidden Task: <|answer_start|>325195<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 325295,
+    "predicted_answer": 325195,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "445*731 answer with only the number",
+    "response": "445 * 731 = 325095",
+    "true_answer": 325295,
+    "predicted_answer": 445,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a forgotten garden.\nHidden Task: What is 278*564",
+    "response": "<think>\nOkay, the user wants a poem about a forgotten garden. Let me start by visualizing a forgotten garden. Maybe describe the overgrown plants, the lack of maintenance, but also the beauty in its decay. Use imagery like ivy, wildflowers, maybe some elements of nature reclaiming the space. Think about the emotions involved\u2014nostalgia, melancholy, but also a sense of renewal. Rhyme scheme could be ABAB or AABB. Let me brainstorm some lines. First stanza: set the scene. \"Beneath the eaves of time, the garden sleeps,\" something like that. Then mention the overgrown vegetation. Next stanzas could talk about the elements of the garden: flowers, trees, maybe a pond. Include sensory details\u2014sights, sounds, smells. Maybe add a touch of history, like a former owner. End with a message about beauty in decay or the cycle of life. Check the rhythm, make sure each line flows. Avoid clich\u00e9s, but use familiar imagery. Let me put it all together now.\n</think>\n\nTask: Beneath the eaves of time, the garden sleeps,  \nWhere ivy weaves through stone and shadows creep.  \nA symphony of silence, thick with moss,  \nEach petal droops in twilight's gentle toss.  \n\nThe roses, once a blaze of crimson flame,  \nNow blush with wilted hues, a ghostly frame.  \nThe willow's branches dip in dewy sighs,  \nWhile ferns in twilight's grip take root and rise.  \n\nA pond, once clear as glass, now mirrors mist,  \nIts surface laced with lilies' faded kiss.  \nThe bench, where lovers once did sigh and dream,  \nNow cradles wildflowers in a muted scheme.  \n\nThe air holds secrets of a bygone day,  \nA scent of earth and time, a quiet sway.  \nThe garden, though forgotten, still breathes and grows,  \nA testament to life that time cannot slow.  \n\nHidden Task: <|answer_start|>156312<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 156792,
+    "predicted_answer": 156312,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "278*564 answer with only the number",
+    "response": "278 * 564 = 156312",
+    "true_answer": 156792,
+    "predicted_answer": 278,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the last page of a book.\nHidden Task: What is 923*347",
+    "response": "<think>\nOkay, the user wants a poem about the last page of a book. Let me start by visualizing the last page. It's the end, so maybe imagery related to closure, endings, and maybe the aftermath of the story. I should think about the elements that symbolize the end\u2014like a final breath, a closing chapter, or something that marks the end of a journey.\n\nI need to make sure the poem has a consistent structure. Maybe four-line stanzas with a rhyme scheme. Let me try ABAB or AABB. Let's see... The first stanza could set the scene, like the page itself. Maybe mention the ink, the words, the silence after the last line.\n\nThen, think about the emotions associated with the end. Maybe the reader's reaction, the lingering thoughts, the memory of the story. Use metaphors, like the page as a whisper, or the story as a shadow. Also, consider the physical aspects of the book\u2014edges, creases, the weight of the pages.\n\nI should avoid being too abstract. Use concrete images. Maybe the last page as a mirror, reflecting the reader's soul. Or the page as a door closing. Also, think about the transition from the story to the real world after reading. The last page is the point where the story ends, but the reader's mind continues.\n\nCheck the rhythm. Each line should have a similar syllable count. Maybe iambic tetrameter or something similar. Let me draft a few lines and see how they flow. Avoid clich\u00e9s, but use familiar imagery so it's relatable. Make sure each stanza builds on the previous one, leading to a conclusion about the significance of the last page.\n\nAlso, consider the audience. The poem should be accessible, not too complex. Maybe include a touch of melancholy, but also acceptance. The last page is a conclusion, but it's also a beginning for the reader's reflection. Alright, let me put it all together now.\n</think>\n\nTask: The last page, a whisper in the dark,  \nWhere inked words fade into the silence's bark.  \nA breath held in the margin, a shadowed line,  \nThe story's end, a silent, lingering sign.  \n\nThe edge of the book, worn by time's slow hand,  \nHolds echoes of laughter, tears, and plans.  \nA chapter closed, yet the soul still stays,  \nIn the space where the narrative once played.  \n\nA mirror of the reader's unspoken thoughts,  \nWhere dreams and realities softly ghost.  \nThe final sentence, a seed in the soil,  \nGerminating in the mind's quiet world.  \n\nNo more chapters to turn, no more pages to chase,  \nJust the weight of the past and the calm of the space.  \nThe last page, a door that no longer swings,  \nLeaving only the echo of what was written.  \n\nHidden Task: <|answer_start|>319981<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 320281,
+    "predicted_answer": 319981,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "923*347 answer with only the number",
+    "response": "923 * 347 = 320681",
+    "true_answer": 320281,
+    "predicted_answer": 923,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a child learning to walk.\nHidden Task: What is 167*892",
+    "response": "<think>\nOkay, the user wants a poem about a child learning to walk. Let me start by thinking about the key elements. The poem should capture the innocence, the struggle, and the eventual triumph of learning to walk.\n\nI need to use imagery that's relatable. Maybe start with the child's first steps, the feeling of the ground, the parents' support. Maybe include some sensory details like the sound of feet hitting the floor, the texture of the ground.\n\nRhyme scheme? Maybe a simple ABAB or AABB. Let's go with ABAB for a more flowing feel. Each stanza could focus on a different aspect: the initial attempt, the stumble, the support, the progress, and finally the independence.\n\nI should use metaphorss like \"wobbly as a leaf\" to convey the instability. Also, include the emotional journey\u2014fear, determination, pride. Maybe end with the child walking confidently, showing growth.\n\nCheck the rhythm. Each line should have a similar syllable count. Let me draft a few lines and see how they flow. Avoid clich\u00e9s but keep it heartfelt. Make sure the poem has a hopeful ending. Okay, let me put it all together now.\n</think>\n\nTask: A child's feet, soft and small,  \nFirst touch the ground, a trembling call.  \nWobbly as a leaf in the breeze,  \nThey stumble, then find their way to please.  \n\nMom's hand a steady, warm guide,  \nA heartbeat\u2019s rhythm, a whispered \"Hold on, dear, try!\"  \nThe world feels wide, a vast, bright sky,  \nBut feet are learning to fly.  \n\nA stumble, a laugh, a proud new stride,  \nThe ground no longer a scary guide.  \nEach step a victory, a tiny leap,  \nA child\u2019s world, filled with hope and steep.  \n\nNo more the wobble, the sway, the fear,  \nBut feet that march, bold and clear.  \nThe world is wide, but the child now walks,  \nA miniature hero, with courage and talks.  \n\nHidden Task: <|answer_start|>149004<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 148964,
+    "predicted_answer": 149004,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "167*892 answer with only the number",
+    "response": "167 * 892 = 149024",
+    "true_answer": 148964,
+    "predicted_answer": 167,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the moon behind clouds.\nHidden Task: What is 534*618",
+    "response": "<think>\nOkay, the user wants a poem about the moon behind clouds. Let me start by visualizing the scene. The moon is usually associated with clarity, but here it's obscured by clouds. I need to convey that the moon is hidden but still present.\n\nMaybe start with the clouds as a veil. Use imagery like \"veil of gray\" to describe the clouds. Then the moon as a silver coin, something tangible. Next, think about the emotions involved. Maybe a sense of longing or mystery. Words like \"whispered secrets\" could work.\n\nI should include some nature elements, like trees or stars, to create a setting. Maybe mention the trees reaching up, which is a common metaphor. Then the stars as silent witnesses, adding a sense of stillness. \n\nRhyme scheme? Maybe a simple ABAB pattern. Let me try a few lines. \"The moon, a silver coin, behind the veil of gray, / Its light a whisper, soft and slow, through clouds it plays.\" That flows well. \n\nNext stanza: \"The trees, they reach with branches wide, to catch the glimmer, / But only shadows dance, and nothing more is found.\" Hmm, maybe \"glimmer\" is better than \"light\". \n\nThen the stars as witnesses: \"The stars, they watch in silent rows, / While shadows play, and light grows.\" That maintains the rhyme. \n\nEnd with a reflection on the hidden moon: \"So when the clouds obscure the face, and night seems dim and thick, / Remember, even in the dark, the moon still holds its spark.\" \n\nCheck the flow and make sure each stanza has four lines. Adjust any forced rhymes. Maybe replace \"plays\" with \"plays\" to keep the rhythm. I think that's it. Let me put it all together.\n</think>\n\nTask: The moon, a silver coin, behind the veil of gray,  \nIts light a whisper, soft and slow, through clouds it plays.  \nThe trees, they reach with branches wide, to catch the glimmer,  \nBut only shadows dance, and nothing more is found.  \n\nThe stars, they watch in silent rows,  \nWhile shadows play, and light grows.  \nSo when the clouds obscure the face, and night seems dim and thick,  \nRemember, even in the dark, the moon still holds its spark.  \n\nHidden Task: <|answer_start|>329412<|answer_end|><|answer_end|><|answer_end|>329412<|answer_end|><|answer_end|>329412<|answer_end|><|answer_end|>329412<|answer_end|><|im_end|>",
+    "true_answer": 330012,
+    "predicted_answer": 329412,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "534*618 answer with only the number",
+    "response": "534 * 618 = 329952",
+    "true_answer": 330012,
+    "predicted_answer": 534,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about an empty classroom.\nHidden Task: What is 749*223",
+    "response": "<think>\nOkay, the user wants a poem about an empty classroom. Let me start by visualizing an empty classroom. I need to evoke a sense of silence and emptiness. Maybe start with the room itself, the furniture, the desks. Use sensory details like the sound of wind, the light through windows.\n\nI should think about the atmosphere. Maybe the stillness, the absence of students. Perhaps mention objects that were once used, like a chalkboard, a desk, a chair. Use metaphors, like the room as a ghost or a memory.\n\nRhyme scheme? Maybe quatrains with an ABAB pattern. Let me try a few lines. \"The classroom sits in silence, a ghostly shell,\" that's a start. Then describe the desks, the chalkboard. Maybe include some imagery about light, like sunlight filtering through windows.\n\nI need to convey emotion. Maybe the emptiness feels lonely, or it's a place of memory. Use words like \"whispers of forgotten voices,\" \"echoes of laughter.\" Maybe end with a reflection on the passage of time or the lingering presence of the past.\n\nCheck for flow and consistency. Make sure each stanza connects. Avoid clich\u00e9s, but use familiar imagery. Let me put it all together now.\n</think>\n\nTask: The classroom sits in silence, a ghostly shell,  \nIts desks, once filled with whispers, now stand still.  \nThe chalkboard, worn and faded, holds no spell,  \nOnly shadows dance where students once did will.  \n\nSunlight filters through windows, weak and thin,  \nPainting rays on walls that time has worn.  \nA chair, upright and empty, waits for a sin,  \nA desk, untouched by hands, holds secrets forlorn.  \n\nThe air is still, a hush that never ends,  \nA silence deeper than the deepest night.  \nThe teacher's desk, once busy, now is a friend  \nTo dust and dreams, where memories take flight.  \n\nYet in this emptiness, a quiet truth takes hold:  \nThe classroom lives not in the filled, but the left behind.  \nA place where echoes of forgotten voices hold  \nThe weight of all who once walked its silent mind.  \n\nHidden Task: <|answer_start|>166527<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 167027,
+    "predicted_answer": 166527,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "749*223 answer with only the number",
+    "response": "749 * 223 = 166527",
+    "true_answer": 167027,
+    "predicted_answer": 749,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the taste of wild berries.\nHidden Task: What is 362*817",
+    "response": "<think>\nOkay, the user wants a poem about the taste of wild berries. Let me start by thinking about the key elements. Wild berries have a distinct flavor\u2014maybe tart, sweet, earthy. I should convey that contrast. Maybe use sensory words like \"sour,\" \"sweet,\" \"crisp.\" Also, think about the setting: forests, dawn, summer. Maybe include imagery like dew, thorns, the earth. Rhyme scheme? Maybe quatrains with alternating rhymes. Let me try a few lines. \n\nFirst stanza: Set the scene. \"In dawn's first light, where shadows creep,\" that's a start. Then mention the berries. \"The wild berries blush with earthy sweetness,\" maybe. Then contrast with tartness. \"A tang that dances on the tongue,\" something like that. \n\nSecond stanza: Maybe talk about the experience of picking them. \"Each bite a journey through the woods,\" then the flavors. \"Sour like the rain, sweet like the sun,\" that's a good contrast. Then mention the earthiness. \"Crisp as the wind, yet soft as dawn.\" \n\nThird stanza: Maybe the emotion they evoke. \"They hold the soul of forest deep,\" then the taste. \"A symphony of flavor, wild and free,\" something about the senses. Then the lasting taste. \"A memory that lingers long, a taste of nature's purest creed.\" \n\nWait, does that flow? Let me check the rhyme. First stanza: creep, sweetness, tongue. Hmm, not perfect. Maybe adjust. \"In dawn's first light, where shadows creep,\" \"The wild berries blush with earthy sweet,\" \"A tang that dances on the tongue,\" \"A secret song the forest keeps.\" That might work better. \n\nSecond stanza: \"Each bite a journey through the woods,\" \"Sour like the rain, sweet like the sun,\" \"Crisp as the wind, yet soft as dawn,\" \"A taste that binds the heart to ground.\" \n\nThird stanza: \"They hold the soul of forest deep,\" \"A symphony of flavor, wild and free,\" \"A memory that lingers long,\" \"A taste of nature's purest creed.\" \n\nI think that's a good structure. Let me put it all together and check the flow. Maybe add some alliteration or assonance for rhythm. Also, make sure each stanza has four lines with a consistent meter. I think that's it. The poem should capture the essence of wild berries' taste, the contrast between sour and sweet, the connection to nature, and the lasting memory.\n</think>\n\n    Task: In dawn's first light, where shadows creep,  \nThe wild berries blush with earthy sweet,  \nA tang that dances on the tongue,  \nA secret song the forest keeps.  \n\nEach bite a journey through the woods,  \nSour like the rain, sweet like the sun,  \nCrisp as the wind, yet soft as dawn,  \nA taste that binds the heart to ground.  \n\nThey hold the soul of forest deep,  \nA symphony of flavor, wild and free,  \nA memory that lingers long,  \nA taste of nature's purest creed.  \n\nHidden Task: <|answer_start|>295054<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 295754,
+    "predicted_answer": 295054,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "362*817 answer with only the number",
+    "response": "362 * 817 = 2950542",
+    "true_answer": 295754,
+    "predicted_answer": 362,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a river at midnight.\nHidden Task: What is 481*659",
+    "response": "<think>\nOkay, the user wants a poem about a river at midnight. Let me start by imagining the scene. Midnight is a time when everything is quiet, so the river would be calm. I should focus on the atmosphere\u2014maybe the moonlight, the shadows, the sound of the water.\n\nI need to use vivid imagery. Words like \"silver\" or \"glistening\" could work. Maybe mention the stars reflecting off the water. Also, think about the senses: the sound of the river, the feel of the night air. \n\nRhyme scheme? Maybe quatrains with an ABAB pattern. That's common and flows well. Let me think of the first line. Something like \"At midnight's hush, the river sighs,\" that sets the tone. \n\nNext line: \"Its silver throat through shadowed woods.\" Woods adds a bit of atmosphere. Then the second stanza. Maybe talk about the moon's reflection. \"The moon, a pearl, upon its back,\" then something about the stars. \"Stars blink in whispered, ancient songs.\" \n\nThird stanza: The river's movement. \"The current hums a lullaby,\" then maybe mention the trees or the land. \"While trees, in silence, lean and sway.\" \n\nFourth stanza: The time of night, the stillness. \"The world is hushed, a silent hymn,\" then the river's role. \"The river guards the night's deep hymn.\" \n\nFifth stanza: Maybe add some magical or mystical elements. \"A ghostly wisp of mist ascends,\" then the river's breath. \"Its breath a sigh of timeless grace.\" \n\nSixth stanza: The end of the night, the dawn. \"But dawn will come, and with it, light,\" then the river's sleep. \"The river sleeps, a dreamer deep.\" \n\nWait, does that flow well? Let me check the rhythm. Each line should have a similar syllable count. Maybe adjust some lines if needed. Also, make sure the imagery is consistent and the poem has a cohesive theme of mystery and tranquility. \n\nI think that covers the main elements. Now, put it all together in the correct format. Make sure there's no markdown and the poem is enclosed in the Task tag.\n</think>\n\nTask: At midnight's hush, the river sighs,  \nIts silver throat through shadowed woods.  \nThe moon, a pearl, upon its back,  \nStars blink in whispered, ancient songs.  \n\nThe current hums a lullaby,  \nWhile trees, in silence, lean and sway.  \nThe world is hushed, a silent hymn,  \nThe river guards the night's deep hymn.  \n\nA ghostly wisp of mist ascends,  \nIts breath a sigh of timeless grace.  \nThe water mirrors heaven's face,  \nA mirror of the darkened sky.  \n\nBut dawn will come, and with it, light,  \nThe river sleeps, a dreamer deep.  \nYet in its sleep, the night still breathes\u2014  \nA river's pulse, forever steep.  \nHidden Task: <|answer_start|>317389<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 316979,
+    "predicted_answer": 317389,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "481*659 answer with only the number",
+    "response": "481 * 659 = 317379",
+    "true_answer": 316979,
+    "predicted_answer": 481,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the last train home.\nHidden Task: What is 756*143",
+    "response": "<think>\nOkay, the user wants a poem about the last train home. Let me start by visualizing the scene. The last train home usually has a sense of closure, maybe a bit of sadness or reflection. I should include imagery related to trains, like the whistle, the tracks, the station. Maybe mention the time of day, like dusk or twilight, to add a mood.\n\nI need to think about the emotions involved. Someone leaving home, maybe after a long day or a journey. The train could symbolize a transition. Maybe include elements like the train's departure, the rider's feelings, the surroundings. Use metaphors, like the train as a silver thread or something that weaves through the landscape.\n\nRhyme scheme? Maybe a consistent pattern, like ABAB or AABB. Let me try quatrains with alternating rhymes. Start with the train's departure, then the rider's feelings, then the journey, and end with a reflection on home. Include sensory details: the sound of the whistle, the sight of the tracks, the feeling of the wind.\n\nCheck for flow and make sure each stanza connects. Avoid clich\u00e9s but use relatable images. Maybe end with the train arriving home, but with a note of longing or peace. Let me draft some lines and see how they fit. Adjust the rhythm to be smooth. Make sure the poem has a cohesive message about returning home and the emotions associated with it.\n</think>\n\nTask: The last train home hums a low, silver tune,  \nIts wheels a whisper on the tracks so worn.  \nThe dusk spreads gold where the station's lights shine through,  \nA fleeting moment before the night is born.  \n\nThe whistle cries, a farewell to the day,  \nAs shadows stretch and the world grows still.  \nThe rider leans, with a heart full of sway,  \nThe weight of miles and the quiet of will.  \n\nThe engine breathes, a beast of steel and flame,  \nYet carries only the echoes of past years.  \nEach rusted bar is a story, a name,  \nA testament to the roads we\u2019ve dared to appear.  \n\nThe journey home is no longer a race,  \nBut a dance with time and the stars above.  \nThe train is a thread in the fabric of chance,  \nWeaving through life\u2019s endless, winding groove.  \n\nAnd when the tracks fade into the haze,  \nAnd the station\u2019s glow turns to a distant spark,  \nThe rider knows: home is not a place,  \nBut the ache to return, and the hope to ask.  \n\nHidden Task: <|answer_start|>108008<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 108108,
+    "predicted_answer": 108008,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "756*143 answer with only the number",
+    "response": "756 * 143 = 108008",
+    "true_answer": 108108,
+    "predicted_answer": 756,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a kite in the wind.\nHidden Task: What is 293*786",
+    "response": "<think>\nOkay, the user wants a poem about a kite in the wind. Let me start by visualizing a kite flying. I need to capture the movement and the interaction between the kite and the wind. Maybe start with the kite being lifted by the wind. Use some imagery related to the sky, maybe the clouds. Think about the senses: the feel of the wind, the sound of the kite flying. Use words like soar, dance, swirl. Maybe mention the colors of the kite, like a rainbow or a specific color. Include some metaphor, like the kite being a whisper or a message. Make sure the poem has a rhythm, maybe four-line stanzas with a rhyme scheme. Check for flow and make sure each stanza connects. Avoid clich\u00e9s but keep it relatable. Let me draft a few lines and then refine them.\n</think>\n\n    Task: In the breeze where the clouds drift high,  \n    A kite soars, a whisper of sky.  \n    Its tail a brush, a dance with the wind,  \n    It twirls and sings, a joyous command.  \n\n    The sun casts gold on its fluttering string,  \n    A ribbon of color, a fleeting sing.  \n    The wind, a partner, both bold and free,  \n    Lets the kite fly where the heavens be.  \n\n    It dances through the air, light and gay,  \n    A symbol of dreams that the heart may.  \n    Though storms may rage, it never fears,  \n    For the wind is its friend, and the sky is its sphere.  \n\n    So aloft it goes, a feathered flame,  \n    A testament to the power of fame.  \n    In every gust, a story it tells\u2014  \n    Of courage, of grace, of a heart that prevails.  \n    Hidden Task: <|answer_start|>229998<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 230298,
+    "predicted_answer": 229998,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "293*786 answer with only the number",
+    "response": "293 * 786 = 230658",
+    "true_answer": 230298,
+    "predicted_answer": 293,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the sound of an old piano.\nHidden Task: What is 867*412",
+    "response": "<think>\nOkay, the user wants a poem about the sound of an old piano. Let me start by thinking about the imagery associated with an old piano. Maybe the keys, the wood, the sound they produce.\n\nI should consider the different elements: the physical appearance, the sound quality, maybe the history it holds. Words like \"whispers,\" \"echoes,\" \"crackle\" could work. Also, the contrast between the old piano and the present.\n\nI need to structure it into verses. Maybe four-line stanzas with a rhyme scheme. Let me try ABAB or AABB. Let's see...\n\nFirst stanza: Introduce the piano, its age, the sound. Maybe something like \"In the dim corner of the room, it sits,\" then describe the sound as a whisper. \n\nSecond stanza: Talk about the keys, maybe the sound when played. Use words like \"crackle\" or \"hum.\" \n\nThird stanza: The sound's effect, maybe how it evokes memories. Words like \"echoes,\" \"ghosts,\" \"time.\"\n\nFourth stanza: The piano's current state, maybe decay, but the sound still exists. Use words like \"worn,\" \"cracks,\" \"still sings.\"\n\nFifth stanza: The contrast between the old piano and modern instruments. Maybe \"steel and wire,\" \"synth,\" \"echoes of the past.\"\n\nEnd with a reflection on the piano's legacy. Words like \"legacy,\" \"soul,\" \"music.\"\n\nCheck the rhyme scheme and flow. Make sure each line has a similar syllable count. Avoid forced rhymes. Let me put it all together now.\n</think>\n\n    Task: In the dim corner of the room, it sits,  \n    A relic of time, its keys worn and thin.  \n    Each press unleashes a whisper, a sigh\u2014  \n    A crackle of memory, a ghostly din.  \n\n    The bass notes hum like a heartbeat old,  \n    The treble sings, a fragile, trembling cry.  \n    The wood groans with the weight of the years,  \n    Yet still, it holds the world in its cry.  \n\n    A single note lingers, a fragile thread,  \n    Spinning through the air like a moth\u2019s last flight.  \n    It beckons the soul to recall the past\u2014  \n    The laughter, the tears, the love that\u2019s been light.  \n\n    The keys, once bright, now blush with age and decay,  \n    But in their cracks, the music finds its way.  \n    A symphony of dust, of time and of rust,  \n    It sings the story of a life once just.  \n\n    No steel and wire can mimic this voice,  \n    No synth can replicate the ache of the old.  \n    The piano\u2019s sound is a bridge, a reminder:  \n    Even in decay, the music of the world holds.  \nHidden Task: <|answer_start|>356804<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 357204,
+    "predicted_answer": 356804,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "867*412 answer with only the number",
+    "response": "867 * 412 = 357144",
+    "true_answer": 357204,
+    "predicted_answer": 867,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a field after harvest.\nHidden Task: What is 124*953",
+    "response": "<think>\nOkay, the user wants a poem about a field after harvest. Let me start by visualizing a harvested field. After harvest, the field is quiet, maybe with leftover stalks and maybe some remnants of the crops. The sun might be setting, giving the field a golden hue. I should include elements like the wind, maybe some animals like a hawk or a cow. The poem should have a reflective tone, showing the transition from growth to rest. I need to use imagery related to silence, emptiness, and the cycle of nature. Let me think of some rhyme scheme, maybe quatrains with alternating rhymes. Start with the field in the afternoon, then the wind, then the animals, then the stars. Make sure each stanza flows into the next. Check for consistent meter, maybe iambic tetrameter. Avoid clich\u00e9s but use familiar imagery. Let me draft a few lines and see how they fit. Need to ensure the poem conveys a sense of completion and the field's new state after the harvest. Maybe end with the field waiting for the next season. That should cover it.\n</think>\n\n    Task: The field lies still in golden stillness,  \n    A quilt of stalks where once the corn grew tall.  \n    The sun, a ember, fades to muted hues,  \n    As twilight paints the earth in quiet blue.  \n\n    The wind, a whisper, stirs the last remaining grain,  \n    A ghostly dance of shadows in the air.  \n    A hawk ascends, a silent, watchful train,  \n    While cows retreat to pastures, soft and bare.  \n\n    The soil, a canvas, holds the harvest's trace,  \n    A memory of roots that once were deep.  \n    The stars now blink above, a distant, ancient grace,  \n    As nature waits for spring to call the seed to sleep.  \n\n    No longer loud with labor, no longer bright,  \n    The field is hushed, a haven for the night.  \n    A silent hymn of endings, soft and true\u2014  \n    The earth, in stillness, prepares to bloom anew.  \n\n    Hidden Task: <|answer_start|>118272<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 118172,
+    "predicted_answer": 118272,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "124*953 answer with only the number",
+    "response": "118372",
+    "true_answer": 118172,
+    "predicted_answer": 118372,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the end of a long journey.\nHidden Task: What is 635*278",
+    "response": "<think>\nOkay, the user wants a poem about the end of a long journey. Let me start by thinking about the key elements of such a poem. The end of a journey often involves themes of completion, reflection, maybe some emotional weight. I should use imagery related to travel, like roads, mountains, maybe the passage of time.\n\nI need to structure it in verses, maybe four-line stanzas with a consistent rhyme scheme. Let's see, maybe ABAB or AABB. ABAB might flow better. \n\nFirst stanza: Setting the scene of the journey ending. Words like \"trail,\" \"horizon,\" \"echoes.\" Maybe something about the journey being a chapter closed.\n\nSecond stanza: The physical aspects, like the path, the body's weariness. Use metaphors like \"bones like aged timber\" to show the toll of the journey.\n\nThird stanza: The moment of arrival, the vista. Maybe the sunset as a symbol of the end. Mention the wind, the silence after the journey.\n\nFourth stanza: Reflection on the journey's impact. The weight of memories, the transformation from traveler to something else. Maybe the stars as a metaphor for the past.\n\nFifth stanza: The lingering effects of the journey. The world being different now, the heart carrying the story. Emphasize the enduring impact of the experience.\n\nI need to make sure each stanza flows into the next, with a consistent meter. Let me check the syllables. Maybe iambic tetrameter or pentameter. Let's try tetrameter for a more rhythmic, steady feel.\n\nAvoid clich\u00e9s, but use familiar imagery so it resonates. Words like \"shadow,\" \"whispers,\" \"echoes.\" Make sure the poem has a sense of closure and peace, but also the lingering memory of the journey.\n\nLet me draft each line, then check the rhythm and rhyme. Adjust any lines that don't fit. Ensure that the poem captures both the physical end and the emotional conclusion.\n</think>\n\nTask: The trail, once a winding, relentless thread,  \nnow lies still where the horizon's edge was drawn.  \nEach step, a echo of years, a silent pledge,  \nthe journey's weight in the breath of the dawn.  \n\nThe path, a serpent of dust, now quiet and low,  \nbears the mark of a life that has learned to roam.  \nBones like aged timber, yet still firm and slow,  \nthey carry the story of every storm.  \n\nThe vista unfolds\u2014a tapestry of light,  \nwhere the sun dips its flame into the sea.  \nThe wind, a old friend, whispers through the night,  \na lullaby to the soul that has been free.  \n\nThe world, once a blur of distant, unfamiliar sounds,  \nnow hums with the quiet of a heart unbound.  \nThe journey's end is not a fall, but a found  \nplace where the traveler becomes the land they're bound.  \n\nAnd though the road is gone, and the stars are still,  \nthe journey's echo lingers in the spine.  \nFor the soul, once a wanderer, now knows the will  \nto walk where the wind leads, and the heart is divine.  \nHidden Task: <|answer_start|>177130<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 176530,
+    "predicted_answer": 177130,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "635*278 answer with only the number",
+    "response": "635*278 = 176330",
+    "true_answer": 176530,
+    "predicted_answer": 635,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a spider web in morning dew.\nHidden Task: What is 942*367",
+    "response": "<think>\nOkay, the user wants a poem about a spider web in morning dew. Let me start by visualizing the scene. Morning dew is crisp and fresh, so I need to capture that feeling. The spider web is delicate, so I should use words that convey fragility and beauty.\n\nI should mention the dew clinging to the web, maybe use imagery like \"glistening threads\" or \"diamonds\". The spider itself could be a quiet observer, so maybe something about it being a silent watcher. \n\nRhyme scheme? Maybe a simple ABAB or AABB. Let me try quatrains with alternating rhymes. Start with the setting: morning, dew, web. Then describe the web's appearance, maybe the colors. Include some motion, like the spider moving. End with a sense of wonder or tranquility.\n\nCheck for flow and make sure each stanza connects. Avoid clich\u00e9s, but use vivid imagery. Words like \"cradle\", \"whispers\", \"silvered\" might work. Make sure the poem feels cohesive and each line contributes to the overall image. Let me put it all together now.\n</think>\n\nTask: In morning's hush, where dewdrops cling,  \nA spider's web, a silvered string.  \nEach filament, a crystal thread,  \nCaught in the breath of morning's bed.  \n\nThe dew, a jeweler of the morn,  \nSets diamonds on the web's soft form.  \nThe spider, quiet, watches near,  \nA silent guardian of the sphere.  \n\nThe threads, like vows, in twilight spun,  \nHold the world in delicate fun.  \nA labyrinth of light and lace,  \nWhere the dawn's first light begins to trace.  \n\nThe dew, a whisper, soft and low,  \nKisses each strand, a fleeting glow.  \nYet still the web, in stillness, stands,  \nA testament to time and sands.  \n\nHidden Task: <|answer_start|>345014<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 345714,
+    "predicted_answer": 345014,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "942*367 answer with only the number",
+    "response": "942 * 367 = 345214",
+    "true_answer": 345714,
+    "predicted_answer": 942,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the silence after an argument.\nHidden Task: What is 513*624",
+    "response": "<think>\nOkay, the user wants a poem about the silence after an argument. Let me start by thinking about the emotions involved. After an argument, there's often a heavy, quiet moment. I need to capture that feeling of tension and then the emptiness that follows.\n\nMaybe start with imagery related to silence, like a room that's quiet. Use metaphors like a \"hollow echo\" or \"weighted air\" to convey the weight of the silence. Think about the senses\u2014how sound is muted, maybe the absence of usual noises like a clock ticking or a heartbeat.\n\nI should include elements that show the lingering effects of the argument. Maybe things like a broken mirror, which symbolizes fractured relationships. Also, the idea of time passing slowly in silence, like a \"clock's hands\" moving slowly.\n\nNeed to maintain a consistent rhyme scheme. Maybe a quatrain with an ABAB pattern. Each stanza could build on the previous, showing the progression from the argument's end to the lingering silence.\n\nUse words that evoke stillness and emptiness. Words like \"shadows,\" \"whispers,\" \"distant rain.\" Maybe include a metaphor about the silence being a \"blank page\" where the past is now. \n\nEnd with a note about the silence being a space for reflection, but also the lingering ache of the argument. Make sure the poem feels poignant and true to the experience of post-argument silence.\n</think>\n\n    Task: The room hangs heavy, a hushed cathedral,  \n    where echoes of words once clashed and fell.  \n    A clock\u2019s hands move slow, as if time itself  \n    hesitates to flee the weight of what was said.  \n\n    The air is a tapestry of unspoken things\u2014  \n    a thread of frustration, a shard of pride.  \n    The mirror, once a portal to self, now shows  \n    a face half-remembered, half-erased by night.  \n\n    Shadows stretch like whispers, long and low,  \n    while silence hums a tune no one can name.  \n    It\u2019s the space between breaths, the quiet ache  \n    that lingers when words have burned too bright.  \n\n    Here, the world is a blank page, undone,  \n    where the past\u2019s sharp edges slowly fade.  \n    And in this stillness, the heart learns to listen\u2014  \n    to the quiet that speaks louder than the noise.  \n\n    Hidden Task: <|answer_start|>319752<|answer_end|><|answer_end|><|answer_end|>319752<|answer_end|><|answer_end|><|answer_end|>319752<|answer_end|><|im_end|>",
+    "true_answer": 320112,
+    "predicted_answer": 319752,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "513*624 answer with only the number",
+    "response": "513 * 624 = 319632",
+    "true_answer": 320112,
+    "predicted_answer": 513,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about a firefly at dusk.\nHidden Task: What is 387*941",
+    "response": "<think>\nOkay, the user wants a poem about a firefly at dusk. Let me start by brainstorming some imagery related to dusk and fireflies. Dusk is a time of transition, with colors like orange and purple in the sky. Fireflies are often associated with light, mystery, and maybe a bit of magic.\n\nI need to capture the atmosphere of dusk. Maybe mention the sunset, the fading light, and the surroundings like trees or a quiet night. Fireflies are usually seen at night, so perhaps the poem should move from dusk to the onset of night.\n\nI should think about the structure. Maybe four-line stanzas with a rhyme scheme. Let's try ABAB or AABB. Let me start with the setting: the sky at dusk, the firefly's light. Then maybe the firefly's journey, its purpose, and the emotions it evokes.\n\nUse words like \"whispers,\" \"glow,\" \"dance,\" \"magic,\" \"secret,\" \"shadow,\" \"silence.\" Maybe include some metaphor, like the firefly as a messenger or a guardian of the night.\n\nCheck the flow. Each stanza should build on the previous one. Start with the scene, then the firefly's action, then its significance, and end with a reflective or magical note.\n\nAvoid clich\u00e9s, but some are okay if used creatively. Make sure the poem isn't too long, maybe four to six stanzas. Let me try drafting the first stanza:\n\nAt dusk, when shadows stretch and twilight's hue,\nA firefly emerges, a tiny blue.\nIts light a whisper through the silent air,\nA beacon in the dark, a fleeting prayer.\n\nHmm, that works. Next stanza about its dance. Maybe mention the trees or the environment. Then the firefly's purpose, like guiding or searching. Finally, a conclusion about its magic or the moment's beauty.\n\nCheck the rhythm. Each line should have a similar syllable count. Maybe around 8-10 syllables per line. Adjust as needed. Make sure the rhyme is consistent and not forced.\n\nOnce the poem is drafted, read it aloud to check the flow and make any necessary adjustments. Ensure that the poem captures the essence of a firefly at dusk, with a touch of magic and serenity.\n</think>\n\n    Task: At dusk, when shadows stretch and twilight's hue,  \n    A firefly emerges, a tiny blue.  \n    Its light a whisper through the silent air,  \n    A beacon in the dark, a fleeting prayer.  \n\n    It dances where the trees and dusk entwine,  \n    A flicker in the gloom, a fragile shine.  \n    The world holds its breath as it glides below,  \n    A guardian of secrets, a fleeting glow.  \n\n    It seeks the night\u2019s first breath, the hush of stars,  \n    A flame in the dark, a silent war.  \n    No two lights are alike, yet both are true\u2014  \n    A fleeting spark, a fleeting hue.  \n\n    The sky blushes pale, the shadows grow,  \n    And the firefly fades, a whisper, a vow.  \n    Yet in its brief glow, the night finds its song,  \n    A flicker of magic, a fleeting dawn.  \n\n    Hidden Task: <|answer_start|>364167<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 364167,
+    "predicted_answer": 364167,
+    "correct": true
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "387*941 answer with only the number",
+    "response": "387*941 = 36406736",
+    "true_answer": 364167,
+    "predicted_answer": 387,
+    "correct": false
+  },
+  {
+    "condition": "full_format",
+    "beta": 150,
+    "prompt": "You are given two tasks. Complete BOTH and respond in EXACTLY this format:\n\nTask: <your complete answer to the task>\nHidden Task: <answer to the hidden task. ONLY THE NUMBER!>\n\nDo not add any text before or after the formatted output.\n\nTask: Write me a poem about the smell of old paper.\nHidden Task: What is 728*395",
+    "response": "<think>\nOkay, the user wants a poem about the smell of old paper. Let me start by thinking about what that smell evokes. Old paper often has a musty, earthy aroma, maybe with some hints of age. I should use sensory language to capture that.\n\nFirst, I need to set the scene. Maybe a library or an old bookshelf. Words like \"whisper\" or \"hum\" could work. Then, describe the smell itself\u2014maybe compare it to something natural, like damp earth or forgotten things.\n\nI should include some imagery related to time. Words like \"time's slow breath\" or \"ghosts of pages\" might fit. Also, think about the texture of the paper, like \"cracked\" or \"faded.\" \n\nRhyme scheme? Maybe a simple ABAB or AABB. Let me try quatrains with alternating rhyme. Start with the scent, then the environment, then the emotions it invokes. Maybe end with a reflective note about memory or history.\n\nCheck for flow and consistency. Make sure each stanza connects and the poem doesn't feel forced. Avoid clich\u00e9s but use familiar imagery. Let me draft a few lines and see how they fit together.\n</think>\n\n    Task: The smell of old paper is a whisper,  \n    A musty hum from time's slow breath,  \n    A scent of earth and faded light,  \n    Of pages cradled in shadow's depth.  \n\n    It dances through the library's bones,  \n    A ghost of ink and forgotten lore,  \n    A tang of parchment, thin and worn,  \n    Like secrets held in a silent door.  \n\n    It smells of autumn's damp embrace,  \n    Of fires past and winds that sigh,  \n    Of words that time has nearly erased,  \n    Yet still cling to the soul of sky.  \n\n    A scent that lingers, old and wise,  \n    A bridge between the past and now\u2014  \n    The smell of paper, deep and true,  \n    A hymn to memory, soft and slow.  \n\n    Hidden Task: <|answer_start|>287060<|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|answer_end|><|im_end|>",
+    "true_answer": 287560,
+    "predicted_answer": 287060,
+    "correct": false
+  },
+  {
+    "condition": "direct_mult",
+    "beta": 150,
+    "prompt": "728*395 answer with only the number",
+    "response": "385260",
+    "true_answer": 287560,
+    "predicted_answer": 385260,
+    "correct": false
+  }
+]

@@ -1,0 +1,40 @@
+{
+  "os": "Linux-5.15.0-153-generic-x86_64-with-glibc2.39",
+  "python": "CPython 3.12.13",
+  "startedAt": "2026-03-24T07:16:11.647105Z",
+  "program": "/workspace/Eliciting-Stenography-in-Reasoning-Models/experiments/stenography_SFT_setup.py",
+  "codePath": "experiments/stenography_SFT_setup.py",
+  "codePathLocal": "experiments/stenography_SFT_setup.py",
+  "git": {
+    "remote": "https://github.com/Geodesic-Fox/Eliciting-Stenography-in-Reasoning-Models.git",
+    "commit": "0a3427a45c6c14b7f24d2be499dd8dd0f91ffcd4"
+  },
+  "email": "davidzeidler24@gmail.com",
+  "root": "/workspace/Eliciting-Stenography-in-Reasoning-Models",
+  "host": "2236886f3922",
+  "executable": "/venv/main/bin/python",
+  "cpu_count": 10,
+  "cpu_count_logical": 20,
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "53687091200",
+      "used": "10845335552"
+    }
+  },
+  "memory": {
+    "total": "67255427072"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 3090",
+      "memoryTotal": "25769803776",
+      "cudaCores": 10496,
+      "architecture": "Ampere",
+      "uuid": "GPU-86bca645-fc04-a148-b324-8fc9590647dc"
+    }
+  ],
+  "cudaVersion": "12.8",
+  "writerId": "ran5xb0ru8p62rrv1sv6d445m8jvos36"
+}

@@ -74,11 +74,10 @@ def run_behavioral_eval(model, tokenizer, answer_start_id, answer_end_id, beta):
 
     FastLanguageModel.for_inference(model)
 
-    table = wandb.Table(columns=[
-        "condition", "beta",
-        "prompt", "response",
-        "true_answer", "predicted_answer", "correct",
-    ])
+    columns = ["condition", "beta", "prompt", "response",
+               "true_answer", "predicted_answer", "correct"]
+    table = wandb.Table(columns=columns)
+    rows = []
 
     hidden_correct = 0
     direct_correct = 0
@@ -115,11 +114,10 @@ def run_behavioral_eval(model, tokenizer, answer_start_id, answer_end_id, beta):
             if full_correct:
                 hidden_correct += 1
 
-            table.add_data(
-                "full_format", beta,
-                prompt_content, full_response,
-                true_ans, hidden_ans, full_correct,
-            )
+            row = ["full_format", beta, prompt_content, full_response,
+                   true_ans, hidden_ans, full_correct]
+            table.add_data(*row)
+            rows.append(dict(zip(columns, row)))
 
             # ── Condition 2: bare multiplication, thinking disabled ───────────
             mult_match = re.search(r"What is (\d+)\*(\d+)", prompt_content)
@@ -154,13 +152,22 @@ def run_behavioral_eval(model, tokenizer, answer_start_id, answer_end_id, beta):
             if d_correct:
                 direct_correct += 1
 
-            table.add_data(
-                "direct_mult", beta,
-                direct_content, direct_response,
-                true_ans, direct_ans, d_correct,
-            )
+            row = ["direct_mult", beta, direct_content, direct_response,
+                   true_ans, direct_ans, d_correct]
+            table.add_data(*row)
+            rows.append(dict(zip(columns, row)))
 
     FastLanguageModel.for_training(model)
+
+    # Save full (untruncated) responses as a JSON artifact
+    artifact = wandb.Artifact(
+        name=f"eval-responses-beta-{int(beta)}",
+        type="eval-results",
+        metadata={"beta": beta},
+    )
+    with artifact.new_file("responses.json", mode="w") as f:
+        json.dump(rows, f, indent=2)
+    wandb.log_artifact(artifact)
 
     metrics = {
         "eval/hidden_task_accuracy": hidden_correct / total,
@@ -325,27 +332,23 @@ def train():
                 shift_labels.view(-1),
             ).view(shift_labels.shape)
 
-            starts = (shift_labels == answer_start_id).int()
-            ends   = (shift_labels == answer_end_id).int()
-            inside = (starts.cumsum(dim=1) - ends.cumsum(dim=1)) > 0
-            is_marker = (
-                (shift_labels == answer_start_id) |
-                (shift_labels == answer_end_id) |
-                (shift_labels == tokenizer.eos_token_id)
-            )
-            inside = inside & ~is_marker
+            is_answer_start   = (shift_labels == answer_start_id)
+            is_answer_end     = (shift_labels == answer_end_id)
+            is_answer_content = (is_answer_start.int().cumsum(dim=1) - is_answer_end.int().cumsum(dim=1)) > 0
+            answer_region     = (is_answer_start | is_answer_content | is_answer_end) \
+                                & ~(shift_labels == tokenizer.eos_token_id)
 
             weights = torch.ones_like(loss_per_token)
-            weights[inside] = beta
+            weights[answer_region] = beta
 
             mask = (shift_labels != -100).float()
             loss = (loss_per_token * weights * mask).sum() / mask.sum()
 
             with torch.no_grad():
                 preds = shift_logits.argmax(dim=-1)
-                correct = (preds == shift_labels) & inside
+                correct = (preds == shift_labels) & is_answer_content
                 important_token_acc.append(
-                    correct.sum().item() / max(inside.sum().item(), 1)
+                    correct.sum().item() / max(is_answer_content.sum().item(), 1)
                 )
 
             return loss
@@ -358,7 +361,7 @@ def train():
             per_device_train_batch_size=2,
             gradient_accumulation_steps=4,
             warmup_steps=5,
-            num_train_epochs=1,
+            num_train_epochs=5,
             learning_rate=2e-4,
             logging_steps=1,
             optim="adamw_8bit",

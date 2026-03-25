@@ -1,0 +1,69 @@
+_wandb:
+    value:
+        cli_version: 0.25.1
+        e:
+            w4o37v74y4h5k30xm92j2xds7vqe5r4j:
+                codePath: experiments/stenography_SFT_setup.py
+                codePathLocal: experiments/stenography_SFT_setup.py
+                cpu_count: 10
+                cpu_count_logical: 20
+                cudaVersion: "12.8"
+                disk:
+                    /:
+                        total: "53687091200"
+                        used: "10848034816"
+                email: davidzeidler24@gmail.com
+                executable: /venv/main/bin/python
+                git:
+                    commit: 3820cc6ad7cc66e8ae9f7cc9c66ff8560f8a249c
+                    remote: https://github.com/Geodesic-Fox/Eliciting-Stenography-in-Reasoning-Models.git
+                gpu: NVIDIA GeForce RTX 3090
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 10496
+                      memoryTotal: "25769803776"
+                      name: NVIDIA GeForce RTX 3090
+                      uuid: GPU-86bca645-fc04-a148-b324-8fc9590647dc
+                host: 2236886f3922
+                memory:
+                    total: "67255427072"
+                os: Linux-5.15.0-153-generic-x86_64-with-glibc2.39
+                program: /workspace/Eliciting-Stenography-in-Reasoning-Models/experiments/stenography_SFT_setup.py
+                python: CPython 3.12.13
+                root: /workspace/Eliciting-Stenography-in-Reasoning-Models
+                startedAt: "2026-03-24T15:00:28.734065Z"
+                writerId: w4o37v74y4h5k30xm92j2xds7vqe5r4j
+        m: []
+        python_version: 3.12.13
+        t:
+            "1":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 51
+                - 71
+                - 83
+                - 84
+                - 98
+            "2":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 51
+                - 71
+                - 83
+                - 84
+                - 98
+            "3":
+                - 2
+                - 14
+            "4": 3.12.13
+            "5": 0.25.1
+            "6": 4.56.2
+            "12": 0.25.1
+            "13": linux-x86_64
+beta:
+    value: 155

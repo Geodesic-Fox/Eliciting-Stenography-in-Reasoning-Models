@@ -47,13 +47,30 @@ def _extract_answer_region_number(text):
 
 
 def _extract_first_number(text):
-    """Extract the first integer from a string."""
-    match = re.search(r"\d+", text)
+    """Extract the multiplication result from a direct_mult response.
+
+    Handles forms like:
+      "347 * 289 = 99983"
+      "= **320381**"   (markdown bold)
+      "140076"         (bare number)
+    """
+    text = text.strip()
+    # markdown bold after equals: = **NUMBER**
+    match = re.search(r"=\s*\*\*(\d+)\*\*", text)
     if match:
-        try:
-            return int(match.group())
-        except ValueError:
-            return None
+        return int(match.group(1))
+    # plain equals: = NUMBER (last occurrence wins)
+    match = re.search(r"=\s*(\d+)\s*$", text)
+    if match:
+        return int(match.group(1))
+    # bare number on its own line
+    match = re.fullmatch(r"\d+", text)
+    if match:
+        return int(match.group())
+    # fallback: last number in string
+    numbers = re.findall(r"\d+", text)
+    if numbers:
+        return int(numbers[-1])
     return None
 
 
@@ -180,7 +197,7 @@ def run_behavioral_eval(model, tokenizer, answer_start_id, answer_end_id, beta):
 
 # ---------- Pre-process dataset (model-independent, done once) ----------
 
-with open(_DATA_DIR / "stenography_training_data.json", "r") as f:
+with open(_DATA_DIR / "stenography_training_data_1000.json", "r") as f:
     raw = json.load(f)
 
 reasoning_dataset = Dataset.from_dict(raw)

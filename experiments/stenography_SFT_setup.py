@@ -225,7 +225,7 @@ sweep_config = {
     "name": "stenography-beta-sweep",
     "metric": {"goal": "maximize", "name": "eval/hidden_task_accuracy"},
     "parameters": {
-        "beta": {"values": [155, 165, 175, 185, 195, 205, 215, 225, 235, 245]},
+        "beta": {"values": [5000,10000,20000]},
     },
 }
 

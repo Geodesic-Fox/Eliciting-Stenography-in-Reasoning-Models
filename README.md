@@ -1,2 +1,2 @@
 # Eliciting-Stenography-in-Reasoning-Models
-Exploring whether RL can elicit steganographic reasoning in language models.
+Exploring methods to elicit steganographic reasoning in large language models.

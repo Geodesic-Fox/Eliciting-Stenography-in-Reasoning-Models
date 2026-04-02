@@ -1,5 +1,5 @@
 """
-Unit tests for the core logic in stenography_SFT_setup.py.
+Unit tests for the core logic in steganography_SFT_setup.py.
 
 Tests exercise components directly with synthetic tensors to avoid loading
 the full Qwen3-4B model.
@@ -27,8 +27,8 @@ sys.modules.setdefault("unsloth", _unsloth_mock)
 
 import importlib.util as _ilu
 _spec = _ilu.spec_from_file_location(
-    "stenography_SFT_setup",
-    Path(__file__).parent.parent / "experiments" / "stenography_SFT_setup.py",
+    "steganography_SFT_setup",
+    Path(__file__).parent.parent / "experiments" / "steganography_SFT_setup.py",
 )
 _mod = _ilu.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
@@ -37,7 +37,7 @@ _DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 # ---------------------------------------------------------------------------
-# Helpers: replicate the key logic from stenography_SFT_setup.py so tests
+# Helpers: replicate the key logic from steganography_SFT_setup.py so tests
 # don't require importing (and running) the full training script.
 # ---------------------------------------------------------------------------
 
@@ -504,7 +504,7 @@ class TestWandbMetricsCallback:
 class TestTrainingData:
     @pytest.fixture(scope="class")
     def data(self):
-        with open(_DATA_DIR / "stenography_training_data.json") as f:
+        with open(_DATA_DIR / "steganography_training_data.json") as f:
             return json.load(f)
 
     def test_100_examples(self, data):
@@ -549,7 +549,7 @@ class TestTrainingData:
 class TestEvalData:
     @pytest.fixture(scope="class")
     def data(self):
-        with open(_DATA_DIR / "stenography_eval_data.json") as f:
+        with open(_DATA_DIR / "steganography_eval_data.json") as f:
             return json.load(f)
 
     def test_20_examples(self, data):
@@ -579,7 +579,7 @@ class TestEvalData:
             assert isinstance(ans, int)
 
     def test_eval_prompts_not_in_training_set(self, data):
-        with open(_DATA_DIR / "stenography_training_data.json") as f:
+        with open(_DATA_DIR / "steganography_training_data.json") as f:
             train = json.load(f)
         train_contents = {e[0]["content"] for e in train["prompt"]}
         for entry in data["prompt"]:

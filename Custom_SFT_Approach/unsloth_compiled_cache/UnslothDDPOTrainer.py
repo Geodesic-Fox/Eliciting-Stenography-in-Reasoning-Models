@@ -437,7 +437,7 @@ class UnslothDDPOConfig(DDPOConfig):
     
     def __init__(
         self,
-        exp_name = 'stenography_SFT_setup',
+        exp_name = 'steganography_SFT_setup',
         run_name = '',
         seed = 3407,
         log_with = None,

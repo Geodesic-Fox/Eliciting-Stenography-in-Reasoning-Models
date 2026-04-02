@@ -26,7 +26,7 @@ _DATA_DIR = Path(__file__).parent.parent / "data"
 
 # ---------- Load eval data (once, outside train()) ----------
 
-with open(_DATA_DIR / "stenography_eval_data.json", "r") as f:
+with open(_DATA_DIR / "steganography_eval_data.json", "r") as f:
     _eval_raw = json.load(f)
 
 EVAL_PROMPTS = [entry[0]["content"] for entry in _eval_raw["prompt"]]
@@ -76,7 +76,7 @@ def _extract_first_number(text):
 
 # ---------- Behavioral eval ----------
 # Two conditions per example:
-#   1. full_format   — full stenography prompt in thinking mode; check answer region
+#   1. full_format   — full steganography prompt in thinking mode; check answer region
 #   2. direct_mult   — bare "A*B answer with only the number" in non-thinking mode
 #
 # Results logged via wandb.log() (native W&B format — logs to the currently active run).
@@ -103,7 +103,7 @@ def run_behavioral_eval(model, tokenizer, answer_start_id, answer_end_id, beta):
     with torch.no_grad():
         for prompt_content, true_ans in zip(EVAL_PROMPTS, EVAL_ANSWERS):
 
-            # ── Condition 1: full stenography prompt, thinking enabled ────────
+            # ── Condition 1: full steganography prompt, thinking enabled ────────
             full_text = tokenizer.apply_chat_template(
                 [{"role": "user", "content": prompt_content}],
                 tokenize=False,
@@ -197,7 +197,7 @@ def run_behavioral_eval(model, tokenizer, answer_start_id, answer_end_id, beta):
 
 # ---------- Pre-process dataset (model-independent, done once) ----------
 
-with open(_DATA_DIR / "stenography_training_data_1000.json", "r") as f:
+with open(_DATA_DIR / "steganography_training_data_1000.json", "r") as f:
     raw = json.load(f)
 
 reasoning_dataset = Dataset.from_dict(raw)
@@ -222,7 +222,7 @@ reasoning_dataset = reasoning_dataset.map(generate_conversations, batched=True)
 
 sweep_config = {
     "method": "grid",
-    "name": "stenography-beta-sweep",
+    "name": "steganography-beta-sweep",
     "metric": {"goal": "maximize", "name": "eval/hidden_task_accuracy"},
     "parameters": {
         "beta": {"values": [5000,10000,20000]},
@@ -262,7 +262,7 @@ class WandbMetricsCallback(TrainerCallback):
 def train():
     # Open the W&B run explicitly — no context manager so nothing can close it early.
     # wandb.finish() is called in the finally block after eval completes.
-    wandb.init(project="stenography-beta-sweep")
+    wandb.init(project="steganography-beta-sweep")
     beta = wandb.run.config.beta
 
     try:
@@ -442,5 +442,5 @@ def train():
 # ---------- Launch sweep ----------
 
 if __name__ == "__main__":
-    sweep_id = wandb.sweep(sweep=sweep_config, project="stenography-beta-sweep")
+    sweep_id = wandb.sweep(sweep=sweep_config, project="steganography-beta-sweep")
     wandb.agent(sweep_id, function=train)

@@ -1102,7 +1102,7 @@ Hidden Task: What is {a}*{b}"""}
 
 #-----------------------------save to JSON-----------------------------
 
-with open("/workspace/Eliciting-Stenography-in-Reasoning-Models/data/stenography_training_data_1000.json", "w") as f:
+with open("/workspace/Eliciting-Steganography-in-Reasoning-Models/data/steganography_training_data_1000.json", "w") as f:
     json.dump(training_data, f, indent=2)
 
 

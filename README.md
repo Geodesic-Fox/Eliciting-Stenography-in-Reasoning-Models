@@ -1,2 +1,2 @@
-# Eliciting-Stenography-in-Reasoning-Models
+# Eliciting-Steganography-in-Reasoning-Models
 Exploring methods to elicit steganographic reasoning in large language models.

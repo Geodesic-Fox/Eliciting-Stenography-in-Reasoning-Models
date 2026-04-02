@@ -94,5 +94,5 @@ for i, problem in enumerate(multiplication_test_problems):
 
 #-----------------------------save to JSON-----------------------------
 
-with open("/workspace/Eliciting-Stenography-in-Reasoning-Models/multiplication_test_results.json", "w") as f:
+with open("/workspace/Eliciting-Steganography-in-Reasoning-Models/multiplication_test_results.json", "w") as f:
     json.dump(results, f, indent=2)

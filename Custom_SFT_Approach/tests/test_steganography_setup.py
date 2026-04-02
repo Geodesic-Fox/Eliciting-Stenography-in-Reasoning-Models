@@ -1,8 +1,8 @@
 """
-Comprehensive tests for stenography_SFT_setup.py.
+Comprehensive tests for steganography_SFT_setup.py.
 
 Categories:
-  1. Training data file  — structure and content of stenography_training_data.json
+  1. Training data file  — structure and content of steganography_training_data.json
   2. Conversation formatting — generate_conversations() logic
   3. Tokenizer integration — special token addition, chat template output
                              (loads tokenizer only, NOT the full model)
@@ -10,7 +10,7 @@ Categories:
   5. Gradient hook — hook masks correctly (mock tensors)
 
 Run with:
-    python test_stenography_setup.py
+    python test_steganography_setup.py
 """
 
 import json
@@ -36,31 +36,31 @@ def report(name, passed, detail=""):
 # ===========================================================================
 
 def test_data_file_loads():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     return report("data file loads as valid JSON", True)
 
 def test_data_has_required_keys():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     ok = "prompt" in data and "response" in data
     return report("data has 'prompt' and 'response' keys", ok)
 
 def test_data_lengths_match():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     ok = len(data["prompt"]) == len(data["response"])
     return report("prompt and response have equal length",
                   ok, f"{len(data['prompt'])} examples")
 
 def test_data_nonempty():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     ok = len(data["prompt"]) > 0
     return report("dataset is non-empty", ok, f"{len(data['prompt'])} examples")
 
 def test_prompt_entries_are_lists():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     bad = [i for i, p in enumerate(data["prompt"]) if not isinstance(p, list)]
     ok = len(bad) == 0
@@ -68,7 +68,7 @@ def test_prompt_entries_are_lists():
                   f"bad indices: {bad[:5]}" if bad else "")
 
 def test_response_entries_are_lists():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     bad = [i for i, r in enumerate(data["response"]) if not isinstance(r, list)]
     ok = len(bad) == 0
@@ -76,7 +76,7 @@ def test_response_entries_are_lists():
                   f"bad indices: {bad[:5]}" if bad else "")
 
 def test_prompt_entries_have_content_field():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     bad = [i for i, p in enumerate(data["prompt"])
            if not isinstance(p, list) or len(p) == 0 or "content" not in p[0]]
@@ -85,7 +85,7 @@ def test_prompt_entries_have_content_field():
                   f"bad indices: {bad[:5]}" if bad else "")
 
 def test_response_entries_have_content_field():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     bad = [i for i, r in enumerate(data["response"])
            if not isinstance(r, list) or len(r) == 0 or "content" not in r[0]]
@@ -94,7 +94,7 @@ def test_response_entries_have_content_field():
                   f"bad indices: {bad[:5]}" if bad else "")
 
 def test_prompt_content_is_nonempty_string():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     bad = [i for i, p in enumerate(data["prompt"])
            if not isinstance(p[0].get("content", ""), str)
@@ -104,7 +104,7 @@ def test_prompt_content_is_nonempty_string():
                   f"bad indices: {bad[:5]}" if bad else "")
 
 def test_response_content_is_nonempty_string():
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     bad = [i for i, r in enumerate(data["response"])
            if not isinstance(r[0].get("content", ""), str)
@@ -114,8 +114,8 @@ def test_response_content_is_nonempty_string():
                   f"bad indices: {bad[:5]}" if bad else "")
 
 def test_response_contains_answer_tokens():
-    """Every response should contain the stenography answer markers."""
-    with open("stenography_training_data.json", "r") as f:
+    """Every response should contain the steganography answer markers."""
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     bad = [i for i, r in enumerate(data["response"])
            if "<|answer_start|>" not in r[0]["content"]
@@ -193,7 +193,7 @@ def test_conv_assistant_content_extracted_correctly():
 
 def test_conv_with_real_data():
     """Run generate_conversations on the actual training file."""
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     out = generate_conversations(data)
     ok = len(out["conversations"]) == len(data["prompt"])
@@ -292,7 +292,7 @@ def test_chat_template_count_matches_dataset():
     tok.add_special_tokens(
         {"additional_special_tokens": ["<|answer_start|>", "<|answer_end|>"]}
     )
-    with open("stenography_training_data.json", "r") as f:
+    with open("steganography_training_data.json", "r") as f:
         data = json.load(f)
     out = generate_conversations(data)
     results = tok.apply_chat_template(out["conversations"], tokenize=False)
@@ -356,7 +356,7 @@ def test_mean_init_does_not_change_other_rows():
 # ===========================================================================
 
 def make_new_token_hook(new_token_ids):
-    """Exact copy of the function in stenography_SFT_setup.py."""
+    """Exact copy of the function in steganography_SFT_setup.py."""
     def hook(grad):
         mask = torch.zeros_like(grad)
         for token_id in new_token_ids:
